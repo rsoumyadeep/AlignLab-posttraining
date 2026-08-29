@@ -1,0 +1,45 @@
+# AlignLab root configuration.
+#
+# Composition: defaults below are overridden left-to-right, then by anything
+# in this file, then by command-line overrides.
+#
+#   python -m alignlab.train env=local train.max_steps=50
+#
+# The env group is what keeps machine-specific paths out of the source tree.
+
+defaults:
+  - _self_
+  - env: local
+  - train: default
+  - logging: default
+  - tracking: noop
+  # AlignLab installs its own console + per-run file handlers (see
+  # alignlab.logging_utils). Hydra's default job logging would add a SECOND
+  # file handler writing train.log into the working directory, producing two
+  # divergent logs per run. Disable it and keep a single source of truth.
+  - override hydra/job_logging: none
+  - override hydra/hydra_logging: none
+
+run_name: ""          # empty -> generated as "<experiment>-YYYYmmdd-HHMMSS"
+experiment: smoke
+
+reproducibility:
+  seed: 42
+  # Deterministic algorithms cost throughput and make some ops raise instead
+  # of falling back to a non-deterministic kernel. Opt in deliberately.
+  deterministic: false
+
+preemption:
+  enabled: true
+  # Requeue via scontrol. Default false: whether the department server runs
+  # SLURM is UNKNOWN, and this path is IMPLEMENTED but NOT TESTED.
+  requeue: false
+
+extras: {}
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false

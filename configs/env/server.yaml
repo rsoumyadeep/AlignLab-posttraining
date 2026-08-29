@@ -1,0 +1,73 @@
+# Department GPU server - PRIMARY TRAINING ENVIRONMENT.
+#
+# ============================================================================
+# THIS FILE IS INTENTIONALLY INCOMPLETE. DO NOT GUESS THE MISSING VALUES.
+# ============================================================================
+#
+# Every path below is Hydra MISSING (???). Composing this config raises
+# omegaconf.MissingMandatoryValue until a human fills the values in with facts
+# obtained from an actual login. That is deliberate: a plausible-looking
+# invented path would silently write checkpoints to the wrong volume, and on a
+# shared server could fill a root partition other people depend on.
+#
+# ---------------------------------------------------------------------------
+# WHAT IS KNOWN, AND HOW WELL
+# ---------------------------------------------------------------------------
+#
+# VERIFIED FROM SERVER REPORT (server_system_info.txt, generated 2026-05-07).
+# This is a HARDWARE REFERENCE. It is NOT evidence that the machine is
+# reachable today, that the account is active, or that a job can run:
+#   - Ubuntu 22.04.4 LTS, kernel 6.2.0-39-generic
+#   - AMD EPYC 7513, 32 cores / 64 threads, 503 GiB RAM
+#   - 2 x NVIDIA RTX A6000, 49140 MiB each (96 GB aggregate)
+#   - Compute capability 8.6 (Ampere) -> native bf16, TF32, FlashAttention-2
+#     eligible
+#   - Driver 550.144.03, CUDA 12.4; toolkit /usr/local/cuda-12.3 on PATH
+#   - GPU0 <-> GPU1 topology "SYS" - PCIe/SMP only, NO NVLink
+#   - Storage: / = 1.8 TB NVMe (1.7 TB free); /data = 7.3 TB (1.9 TB free,
+#     74% used, SHARED with other users)
+#   - The account used for that report was NOT in the sudoers file
+#   - Machine is multi-user; other users were actively running jobs
+#
+# REQUIRES LIVE SERVER VERIFICATION (run scripts/server_probe.sh):
+#   - reachability, account status, current GPU occupancy
+#   - home directory path and any storage quota
+#   - Python version; availability of pip / venv / conda / uv
+#   - environment modules; SLURM or any scheduler
+#   - outbound internet: PyPI, huggingface.co, api.wandb.ai
+#   - docker group membership; Apptainer/Singularity
+#   - nvcc, cuDNN, NCCL; whether P2P between the two GPUs is enabled
+#   - GPU allocation policy, wall-time limits, long-run etiquette
+#
+# UNKNOWN (no basis for even a guess):
+#   - departmental usage policy, backup policy for /data, whether either GPU is
+#     informally reserved by another group
+#
+# ---------------------------------------------------------------------------
+# HOW TO COMPLETE THIS FILE
+# ---------------------------------------------------------------------------
+# 1. Run scripts/server_probe.sh on the server and commit its verbatim output.
+# 2. Replace each ??? with a path confirmed to exist and be writable.
+# 3. Put the caches and checkpoints on the LARGE volume, never on /.
+# 4. Record in the commit message which probe output justified each value.
+# ---------------------------------------------------------------------------
+
+name: server
+
+# Run outputs: logs, resolved configs, manifests, metrics. Small.
+output_root: ???
+
+# Model checkpoints. LARGE - must live on the big volume.
+checkpoint_root: ???
+
+# Hugging Face model and dataset cache. LARGE - must live on the big volume.
+# Setting this wrong is how a root partition gets filled by a model download.
+cache_root: ???
+
+device: auto
+
+# Dataloader workers. The machine reports 64 threads but is SHARED, so taking
+# them all would be antisocial. Raise only after checking who else is running.
+num_workers: 4
+
+expect_cuda: true

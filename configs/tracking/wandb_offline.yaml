@@ -1,0 +1,11 @@
+# Weights and Biases, offline.
+#
+# Writes a local run directory that can be uploaded later with "wandb sync".
+# This is the fallback if the department server has no outbound internet
+# access - which is UNVERIFIED. Nothing here contacts the network.
+
+mode: offline
+project: alignlab
+entity: null
+tags:
+  - phase1

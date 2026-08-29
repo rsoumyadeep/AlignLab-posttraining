@@ -1,0 +1,12 @@
+# Weights and Biases, online.
+#
+# STATUS: NOT TESTED. Requires an API key and outbound access to
+# api.wandb.ai. Whether the department server can reach it is UNVERIFIED.
+# If wandb is not installed, alignlab.tracking falls back to the noop tracker
+# with a loud warning rather than aborting the run.
+
+mode: online
+project: alignlab
+entity: null
+tags:
+  - phase1

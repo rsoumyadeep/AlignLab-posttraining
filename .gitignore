@@ -21,10 +21,14 @@ dist/
 *.egg
 
 # --- Virtual environments ---
-.venv/
-venv/
-env/.venv/
-ENV/
+# Anchored with a leading slash so these match ONLY at the repository root.
+# The bare "ENV/" convention is deliberately NOT used: Git is case-insensitive
+# on Windows, so "ENV/" also matches "configs/env/" and would silently exclude
+# the environment config group. Caught during Phase 1A by the
+# "git status --ignored" check.
+/.venv/
+/venv/
+/ENV/
 
 # --- Test / coverage / type-check caches ---
 .pytest_cache/

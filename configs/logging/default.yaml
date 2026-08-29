@@ -1,0 +1,6 @@
+# Console is for watching a run; the file is for diagnosing it afterwards.
+# The file is deliberately more verbose - a run that died inside a detached
+# tmux session on the server leaves nothing but this file.
+
+level: INFO
+file_level: DEBUG

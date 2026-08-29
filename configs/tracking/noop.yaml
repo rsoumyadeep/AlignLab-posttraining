@@ -1,0 +1,9 @@
+# No tracking. The default, and the mode used by the test suite.
+#
+# Chosen as the default so that the entire Phase 1 foundation is runnable and
+# testable with no W&B account, no API key and no network connection.
+
+mode: noop
+project: alignlab
+entity: null
+tags: []

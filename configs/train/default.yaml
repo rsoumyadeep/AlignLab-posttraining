@@ -1,0 +1,22 @@
+# Phase 1 training settings.
+#
+# These drive the FOUNDATION SMOKE TEST only - a tiny synthetic regression that
+# exercises the train/checkpoint/resume path. They are not language-model
+# hyperparameters. Real SFT settings arrive in Phase 3.
+
+max_steps: 20
+batch_size: 8
+learning_rate: 1.0e-3
+weight_decay: 0.0
+grad_clip: 1.0
+
+log_every: 5
+checkpoint_every: 10
+
+# Retain only the N newest checkpoints. The server data volume was observed
+# 74% full and is shared, so unbounded checkpointing is both risky and rude.
+keep_last_checkpoints: 3
+
+# Resume automatically from the newest checkpoint in the run's checkpoint
+# directory, if one exists.
+resume: true
