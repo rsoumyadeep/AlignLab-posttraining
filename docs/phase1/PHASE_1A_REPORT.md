@@ -208,11 +208,11 @@ Read from actual command output, not asserted.
 
 ```
 Branch:   phase-1-foundation
-HEAD:     (see §11 — recorded after the final commit)
-Base:     d21c070  chore: baseline - project instructions, server report, git hygiene
+HEAD:     95209dfbfa7ee443dfdf78e17c82152df5e81e52
+          (95209df  docs(phase-1a): documentation folders, README and report)
 Commits:  d21c070  baseline (inputs only: instructions, server report, hygiene)
           c8f3855  feat(phase-1a): engineering foundation
-          <docs>   docs(phase-1a): five documentation folders + README + report
+          95209df  docs(phase-1a): five documentation folders + README + report
 Merged:   nothing merged to main; main remains at d21c070
 Unmerged: phase-1-foundation is ahead of main and NOT merged
 Remote:   none configured — no push has occurred, nothing is synchronized
