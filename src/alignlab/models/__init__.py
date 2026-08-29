@@ -14,9 +14,43 @@ from alignlab.models.attention import (
     causal_mask,
     scaled_dot_product_attention,
 )
+from alignlab.models.feedforward import FeedForward, SwiGLU
+from alignlab.models.generation import beam_search, generate
+from alignlab.models.kv_cache import KVCache
+from alignlab.models.normalization import LayerNorm, RMSNorm
+from alignlab.models.positional import (
+    ALiBiBias,
+    LearnedAbsolutePositionalEmbedding,
+    RotaryPositionalEmbedding,
+    SinusoidalPositionalEncoding,
+)
+from alignlab.models.transformer import (
+    DecoderBlock,
+    DecoderOnlyTransformer,
+    TransformerConfig,
+)
 
 __all__ = [
+    # attention
     "MultiHeadAttention",
     "causal_mask",
     "scaled_dot_product_attention",
+    # positional
+    "LearnedAbsolutePositionalEmbedding",
+    "SinusoidalPositionalEncoding",
+    "RotaryPositionalEmbedding",
+    "ALiBiBias",
+    # norm + ffn
+    "LayerNorm",
+    "RMSNorm",
+    "FeedForward",
+    "SwiGLU",
+    # model
+    "TransformerConfig",
+    "DecoderBlock",
+    "DecoderOnlyTransformer",
+    "KVCache",
+    # generation
+    "generate",
+    "beam_search",
 ]
