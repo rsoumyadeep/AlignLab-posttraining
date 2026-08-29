@@ -1,0 +1,67 @@
+/data/home/rsoumyadeep/.bashrc: line 19: zoxide: command not found
+===========================================================
+AlignLab Phase 1B - supplementary verification
+Generated: 2026-08-29T16:27:28+05:30
+Host: csrslave  User: rsoumyadeep
+===========================================================
+
+========== SLURM CONTROLLER STATE ==========
+--- scontrol ping ---
+Slurmctld(primary) at csrmaster is DOWN
+--- sinfo -a ---
+slurm_load_partitions: Zero Bytes were transmitted or received
+--- systemctl is-active slurmctld / slurmd ---
+failed
+failed
+--- /etc/slurm contents ---
+cgroup.conf
+cgroup.conf.org
+epilog.d
+gres.conf
+prolog.d
+slurm.conf
+slurm.conf.org
+
+========== GPU MODE ==========
+index, compute_mode, mig.mode.current, persistence_mode, ecc.mode.current
+0, Default, [N/A], Disabled, Disabled
+1, Default, [N/A], Disabled, Disabled
+--- compute apps right now ---
+pid, used_gpu_memory [MiB]
+
+========== STORAGE DETAIL ==========
+Filesystem     Type  1K-blocks       Used Available Use% Mounted on
+/dev/sda1      ext4 7751271852 7274580484  85973724  99% /data
+--- /data/data2 (same fs?) ---
+drwxrwxrwx 7 nobody nogroup 4096 Aug 29 16:26 /data/data2
+--- /tmp partition ---
+/dev/nvme0n1p4  1.8T  101G  1.6T   6% /
+--- /dev/shm ---
+tmpfs           252G  6.2M  252G   1% /dev/shm
+--- home usage breakdown ---
+47G	/data/home/rsoumyadeep/miniconda3
+5.9G	/data/home/rsoumyadeep/DiffuLab
+1.5G	/data/home/rsoumyadeep/thesis_work
+28K	/data/home/rsoumyadeep/gemini-env
+24K	/data/home/rsoumyadeep/snap
+4.0K	/data/home/rsoumyadeep/test_gemini.py
+
+========== SHARED USE ==========
+--- logged-in users ---
+akshaybm anjeshnarwal maniruddha 
+--- distinct non-system users with processes ---
+akshaybm anjeshnarwal ayand drahul maniruddha pratikac rsoumyadeep vivekkumar 
+
+========== PYTHON / ENV MANAGERS ==========
+conda: conda 26.1.1
+uv: uv 0.12.6 (x86_64-unknown-linux-gnu)
+Python 3.10.12
+Python 3.11.16
+Python 3.13.12
+
+========== GIT ==========
+git version 2.34.1
+github ssh auth:
+Hi rsoumyadeep! You've successfully authenticated, but GitHub does not provide shell access.
+
+========== END SUPPLEMENTARY ==========

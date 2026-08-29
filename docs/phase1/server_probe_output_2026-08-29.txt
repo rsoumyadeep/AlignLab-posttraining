@@ -1,0 +1,244 @@
+/data/home/rsoumyadeep/.bashrc: line 19: zoxide: command not found
+===========================================================
+AlignLab server probe
+Generated: 2026-08-29T16:25:39+05:30
+Host: csrslave
+User: rsoumyadeep
+===========================================================
+
+========== IDENTITY AND SHELL ==========
+whoami : rsoumyadeep
+HOME   : /data/home/rsoumyadeep
+PWD    : /data/home/rsoumyadeep
+SHELL  : /bin/bash
+groups : rsoumyadeep
+id     : uid=1018(rsoumyadeep) gid=1018(rsoumyadeep) groups=1018(rsoumyadeep)
+
+========== OS AND KERNEL ==========
+--- uname ---
+Linux csrslave 6.2.0-39-generic #40~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Nov 16 10:53:04 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+--- os-release ---
+PRETTY_NAME="Ubuntu 22.04.4 LTS"
+NAME="Ubuntu"
+VERSION_ID="22.04"
+VERSION="22.04.4 LTS (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=jammy
+
+========== CPU AND MEMORY ==========
+--- nproc ---
+64
+--- lscpu (summary) ---
+Architecture:                       x86_64
+CPU op-mode(s):                     32-bit, 64-bit
+Address sizes:                      48 bits physical, 48 bits virtual
+Byte Order:                         Little Endian
+CPU(s):                             64
+On-line CPU(s) list:                0-63
+Vendor ID:                          AuthenticAMD
+Model name:                         AMD EPYC 7513 32-Core Processor
+CPU family:                         25
+Model:                              1
+Thread(s) per core:                 2
+Core(s) per socket:                 32
+Socket(s):                          1
+Stepping:                           1
+Frequency boost:                    enabled
+CPU max MHz:                        3681.6399
+CPU min MHz:                        1500.0000
+BogoMIPS:                           5199.74
+Flags:                              fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 invpcid_single hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 invpcid cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local clzero irperf xsaveerptr rdpru wbnoinvd amd_ppin brs arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif v_spec_ctrl umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca
+Virtualization:                     AMD-V
+--- free ---
+               total        used        free      shared  buff/cache   available
+Mem:           503Gi       5.7Gi       118Gi        23Mi       379Gi       493Gi
+Swap:          7.6Gi       1.4Gi       6.2Gi
+
+========== GPU - CURRENT RUNTIME STATE ==========
+--- nvidia-smi ---
+Sat Aug 29 16:25:40 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 550.144.03             Driver Version: 550.144.03     CUDA Version: 12.4     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX A6000               Off |   00000000:41:00.0 Off |                  Off |
+| 30%   41C    P8             24W /  300W |      11MiB /  49140MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA RTX A6000               Off |   00000000:C1:00.0 Off |                  Off |
+| 30%   42C    P8             32W /  300W |      11MiB /  49140MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      1969      G   /usr/lib/xorg/Xorg                              4MiB |
+|    1   N/A  N/A      1969      G   /usr/lib/xorg/Xorg                              4MiB |
++-----------------------------------------------------------------------------------------+
+--- per-GPU query ---
+index, name, memory.total [MiB], memory.used [MiB], memory.free [MiB], utilization.gpu [%], compute_cap, driver_version
+0, NVIDIA RTX A6000, 49140 MiB, 11 MiB, 48660 MiB, 0 %, 8.6, 550.144.03
+1, NVIDIA RTX A6000, 49140 MiB, 11 MiB, 48659 MiB, 0 %, 8.6, 550.144.03
+--- processes currently on the GPUs (who else is here) ---
+pid, process_name, used_gpu_memory [MiB]
+--- GPU topology ---
+	[4mGPU0	GPU1	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	SYS	0-63	0		N/A
+GPU1	SYS	 X 	0-63	0		N/A
+
+Legend:
+
+  X    = Self
+  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)
+  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node
+  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)
+  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)
+  PIX  = Connection traversing at most a single PCIe bridge
+  NV#  = Connection traversing a bonded set of # NVLinks
+
+========== CUDA TOOLCHAIN ==========
+--- nvcc ---
+NOT AVAILABLE: nvcc is not on PATH
+--- CUDA installations ---
+/usr/local/cuda
+/usr/local/cuda-12.3
+--- CUDA on PATH ---
+PATH=/data/home/rsoumyadeep/.local/bin:/data/home/rsoumyadeep/.local/bin:/data/home/rsoumyadeep/miniconda3/bin:/data/home/rsoumyadeep/miniconda3/condabin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+LD_LIBRARY_PATH=:/data/home/rsoumyadeep/.mujoco/mujoco210/bin
+
+========== PYTHON ==========
+--- python3 ---
+Python 3.13.12
+--- python ---
+Python 3.13.12
+--- pip3 ---
+pip 26.0.1 from /data/home/rsoumyadeep/miniconda3/lib/python3.13/site-packages/pip (python 3.13)
+--- other interpreters on PATH ---
+python3.10 : Python 3.10.12
+python3.11 : Python 3.11.16
+python3.13 : Python 3.13.12
+--- venv module available? ---
+venv: OK
+
+========== ENVIRONMENT MANAGERS ==========
+--- conda ---
+conda 26.1.1
+--- mamba ---
+NOT AVAILABLE: mamba is not on PATH
+--- uv ---
+uv 0.12.6 (x86_64-unknown-linux-gnu)
+--- module (environment modules) ---
+bash: line 1: type: module: not found
+--- module avail (if present) ---
+NOT AVAILABLE: no environment-modules system
+
+========== SCHEDULER (SLURM OR OTHER) ==========
+--- sinfo ---
+slurm_load_partitions: Zero Bytes were transmitted or received
+--- squeue (mine) ---
+slurm_load_jobs error: Zero Bytes were transmitted or received
+--- sacctmgr partitions ---
+You are not running a supported accounting_storage plugin
+Only 'accounting_storage/slurmdbd' is supported.
+--- scontrol ---
+slurm 22.05.9
+FOUND scheduler tool: sbatch -> /usr/bin/sbatch
+FOUND scheduler tool: srun -> /usr/bin/srun
+FOUND scheduler tool: salloc -> /usr/bin/salloc
+SLURM_JOB_ID (set only inside a job): unset
+
+========== CONTAINERS ==========
+--- apptainer ---
+NOT AVAILABLE: apptainer is not on PATH
+--- singularity ---
+NOT AVAILABLE: singularity is not on PATH
+--- podman ---
+NOT AVAILABLE: podman is not on PATH
+--- docker (daemon runs as root; membership is what matters) ---
+docker binary: /usr/bin/docker
+docker group membership: NO (docker would need sudo)
+
+========== STORAGE AND QUOTA ==========
+--- df ---
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs            51G   18M   51G   1% /run
+/dev/nvme0n1p4  1.8T  101G  1.6T   6% /
+tmpfs           252G  6.2M  252G   1% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/nvme0n1p2  944M   63M  817M   8% /boot
+/dev/nvme0n1p1   48M  6.1M   42M  13% /boot/efi
+/dev/sda1       7.3T  6.8T   82G  99% /data
+tmpfs            51G   84K   51G   1% /run/user/128
+tmpfs            51G   64K   51G   1% /run/user/1014
+tmpfs            51G   64K   51G   1% /run/user/1019
+tmpfs            51G   64K   51G   1% /run/user/1007
+tmpfs            51G  428K   51G   1% /run/user/1011
+tmpfs            51G  392K   51G   1% /run/user/1009
+tmpfs            51G   64K   51G   1% /run/user/1017
+tmpfs            51G   64K   51G   1% /run/user/1015
+tmpfs            51G   64K   51G   1% /run/user/1018
+--- home directory usage ---
+80G	/data/home/rsoumyadeep
+--- quota (if enforced) ---
+NOT AVAILABLE: quota command absent (does not prove no quota)
+--- writability of candidate roots ---
+/data/home/rsoumyadeep   EXISTS, WRITABLE
+/data                    EXISTS, NOT WRITABLE
+/scratch                 DOES NOT EXIST
+/tmp                     EXISTS, WRITABLE
+
+========== NETWORK REACHABILITY ==========
+https://pypi.org/simple/         REACHABLE (HTTP 200)
+https://huggingface.co           REACHABLE (HTTP 200)
+https://api.wandb.ai             REACHABLE (HTTP 404)
+https://github.com               REACHABLE (HTTP 200)
+--- proxy variables ---
+http_proxy     = unset
+https_proxy    = unset
+HTTP_PROXY     = unset
+HTTPS_PROXY    = unset
+no_proxy       = unset
+--- git ---
+git version 2.34.1
+
+========== LONG-RUN TOOLING ==========
+--- tmux ---
+tmux 3.2a
+--- screen ---
+Screen version 4.09.00 (GNU) 30-Jan-22
+--- signals available to Python (SIGUSR1 is the preemption signal) ---
+['SIGABRT', 'SIGALRM', 'SIGBUS', 'SIGCHLD', 'SIGCONT', 'SIGFPE', 'SIGHUP', 'SIGILL', 'SIGINT', 'SIGIO', 'SIGKILL', 'SIGPIPE', 'SIGPROF', 'SIGPWR', 'SIGQUIT', 'SIGRTMAX', 'SIGRTMIN', 'SIGSEGV', 'SIGSTKFLT', 'SIGSTOP', 'SIGSYS', 'SIGTERM', 'SIGTRAP', 'SIGTSTP', 'SIGTTIN', 'SIGTTOU', 'SIGURG', 'SIGUSR1', 'SIGUSR2', 'SIGVTALRM', 'SIGWINCH', 'SIGXCPU', 'SIGXFSZ']
+
+========== EXISTING PYTHON ML STACK (system-wide) ==========
+torch: NOT INSTALLED
+transformers: NOT INSTALLED
+datasets: NOT INSTALLED
+peft: NOT INSTALLED
+trl: NOT INSTALLED
+accelerate: NOT INSTALLED
+bitsandbytes: NOT INSTALLED
+wandb: NOT INSTALLED
+hydra: NOT INSTALLED
+omegaconf: NOT INSTALLED
+numpy: 2.5.1
+flash_attn: NOT INSTALLED
+
+========== TORCH CUDA CHECK (only if torch is already present) ==========
+torch not importable: ModuleNotFoundError: No module named 'torch'
+
+========== PROBE COMPLETE ==========
+Every line above is an OBSERVATION from this machine at this moment.
+Commit this output verbatim. Do not summarise it, and do not treat
+any value as permanent - a shared server changes.
