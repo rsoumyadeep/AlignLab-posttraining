@@ -309,3 +309,63 @@ def test_beam_search_rejects_batch_greater_than_one() -> None:
     model = make_model()
     with pytest.raises(ValueError, match="batch size 1"):
         beam_search(model, torch.randint(0, VOCAB, (2, 3)), max_new_tokens=2)
+
+
+# ==========================================================================
+# regression: the top-p unsort bug found by experiment E9
+# ==========================================================================
+
+
+def test_top_p_unsorts_correctly() -> None:
+    """REGRESSION TEST for a real bug, found by E9 and not by the tests above.
+
+    top_p_filter sorts, thresholds, then must UNSORT back to vocabulary order.
+    The original implementation used ``sorted_idx.argsort()`` as the scatter
+    index - the inverse permutation, which is right for a gather and wrong for
+    a scatter. Surviving logits were written to the WRONG vocabulary positions,
+    so the nucleus contained arbitrary tokens instead of the most probable ones.
+
+    Every earlier top-p test missed it because they used ALREADY-DESCENDING
+    logits, where sorted_idx is the identity and argsort(identity) is also the
+    identity - making the bug invisible. This test uses deliberately unsorted
+    input.
+
+    The visible symptom in E9: top-p=0.9 produced ungrammatical output with a
+    total log-probability of -674 against -25 for plain temperature sampling.
+    """
+    logits = torch.tensor([[1.0, 5.0, 2.0, 4.0, 0.0]])  # NOT sorted
+    # softmax ~ [0.013, 0.693, 0.035, 0.255, 0.005]; p=0.9 needs {1, 3}
+
+    filtered = top_p_filter(logits, p=0.9)
+
+    assert filtered[0, 1].item() == 5.0, "highest logit must be kept, in place"
+    assert filtered[0, 3].item() == 4.0, "second highest must be kept, in place"
+    for masked in (0, 2, 4):
+        assert filtered[0, masked] == NEG_INF, f"index {masked} should be masked"
+
+
+def test_top_p_preserves_values_at_their_original_indices() -> None:
+    """Whatever survives must keep BOTH its value and its vocabulary index."""
+    torch.manual_seed(0)
+    logits = torch.randn(1, 20)
+
+    filtered = top_p_filter(logits, p=0.8)
+
+    kept = torch.isfinite(filtered)
+    torch.testing.assert_close(filtered[kept], logits[kept])
+    # and the kept set must be exactly the top-scoring tokens
+    n_kept = int(kept.sum())
+    expected = set(logits.argsort(descending=True)[0, :n_kept].tolist())
+    assert set(torch.nonzero(kept[0]).flatten().tolist()) == expected
+
+
+def test_top_p_and_top_k_agree_when_they_select_the_same_count() -> None:
+    """Cross-check between the two filters - they must not disagree."""
+    torch.manual_seed(1)
+    logits = torch.randn(1, 30)
+
+    p_filtered = top_p_filter(logits, p=0.75)
+    n = int(torch.isfinite(p_filtered).sum())
+    k_filtered = top_k_filter(logits, k=n)
+
+    assert torch.equal(torch.isfinite(p_filtered), torch.isfinite(k_filtered))

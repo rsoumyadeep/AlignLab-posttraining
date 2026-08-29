@@ -114,7 +114,22 @@ def top_p_filter(logits: torch.Tensor, p: float) -> torch.Tensor:
     remove[..., 0] = False
 
     sorted_logits = sorted_logits.masked_fill(remove, NEG_INF)
-    return sorted_logits.scatter(-1, sorted_idx.argsort(dim=-1), sorted_logits)
+
+    # Unsort. torch.sort gives sorted_logits[i] == logits[sorted_idx[i]], so
+    # the inverse is out[sorted_idx[i]] = sorted_logits[i] - a scatter with
+    # sorted_idx ITSELF as the index.
+    #
+    # BUG FIXED HERE (found by experiment E9). This previously used
+    # sorted_idx.argsort(dim=-1) as the scatter index, which is the inverse
+    # permutation - correct for a gather, wrong for a scatter. The surviving
+    # logits were written to the WRONG vocabulary positions, so the nucleus
+    # ended up containing arbitrary tokens rather than the most probable ones.
+    #
+    # It survived the unit tests because those used already-descending logits,
+    # where sorted_idx is the identity and argsort(identity) is also the
+    # identity - so the bug was invisible. See
+    # tests/test_generation.py::test_top_p_unsorts_correctly.
+    return torch.full_like(logits, NEG_INF).scatter(-1, sorted_idx, sorted_logits)
 
 
 def sample_from_logits(
