@@ -26,17 +26,21 @@ the work can be reproduced, explained, defended and extended.
 
 This repository currently contains **the engineering foundation only**.
 
-**There is no modelling code yet.** No Qwen weights have been downloaded, no
-tokenizer is used, no attention is implemented, and no real training has been run.
-The `train.py` entrypoint exercises the foundation against a deliberately tiny
-synthetic linear regression.
+**Phase 2 added the Transformer components**, built from first principles:
+attention in PyTorch/NumPy/pure Python, RoPE/ALiBi/sinusoidal, RMSNorm, SwiGLU,
+a decoder-only model, a KV cache, and five decoding strategies.
+
+**No Qwen weights have been downloaded** — only 8 KB of configuration metadata,
+at a pinned revision, for architecture reconciliation. No SFT, no LoRA, no DPO,
+no instruction dataset. The only model trained is a 334k-parameter educational
+LM on locally generated synthetic grammar, used for two experiments.
 
 | Phase | Status |
 |---|---|
-| 1A — Foundation (local) | ✅ **COMPLETE**, 122 passed / 2 skipped |
+| 1A — Foundation (local) | ✅ **COMPLETE** |
 | 1B — Foundation (server) | ✅ **COMPLETE**, 110 passed / 1 skipped on GPU server |
 | 1C — Version alignment, storage policy, path-wiring fix | ✅ **COMPLETE** |
-| 2 — Transformer understanding | ⬜ not started |
+| 2 — Transformer understanding | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 3 — SFT | ⬜ not started |
 | 4 — PEFT (LoRA / QLoRA) | ⬜ not started |
 | 5 — Preference learning / RLHF | ⬜ not started |
@@ -82,7 +86,7 @@ uv venv --python 3.11 .venv
 uv pip install -e ".[tracking,dev]"          # local: CPU torch
 
 python scripts/env_report.py          # what this machine actually has
-python -m pytest -q                   # 122 passed, 2 skipped
+python -m pytest -q                   # 288 passed, 2 skipped
 python -m alignlab.train              # foundation smoke run (toy model)
 ```
 
@@ -101,7 +105,7 @@ uv venv --python 3.11 .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install \n    --index-url https://download.pytorch.org/whl/cu124 torch
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -e ".[tracking,dev]"
 
-.venv/bin/python -m pytest -q                       # 110 passed, 1 skipped
+.venv/bin/python -m pytest -q                       # 289 passed, 1 skipped
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python -m alignlab.train env=server
 ```
 
@@ -114,8 +118,10 @@ package cache stays off the 99%-full `/data` volume. Delete it afterwards.
 
 ```
 src/alignlab/       foundation modules (see CODE_EXPLANATION/phase1/)
+src/alignlab/models/ Transformer components, Phase 2 (attention x3, RoPE/ALiBi,
+                     RMSNorm, SwiGLU, decoder-only model, KV cache, decoding)
 configs/            Hydra tree; env/ group absorbs machine differences
-tests/              124 tests; no network or credentials needed
+tests/              290 tests; no network or credentials needed
 scripts/            env_report.py, server_probe.sh (executed on csrslave)
 docs/phase1/        phase reports, storage policy, server probe evidence
 
