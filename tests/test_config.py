@@ -14,11 +14,11 @@ Two things are being protected here:
 
 from __future__ import annotations
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 from hydra import compose, initialize_config_dir
-from omegaconf import MissingMandatoryValue, OmegaConf
+from omegaconf import OmegaConf
 
 from alignlab.config_schema import AlignLabConfig, register_configs
 
@@ -65,17 +65,60 @@ def test_server_env_composes_structurally() -> None:
     assert cfg.env.device == "auto"
 
 
-def test_server_paths_are_mandatory_and_unset() -> None:
-    """The core guard: server paths raise rather than resolve to a guess.
+def test_server_paths_are_populated_and_absolute() -> None:
+    """Server paths are now real, verified values - no longer placeholders.
 
-    If this test ever fails because the values are populated, that is fine -
-    but only once scripts/server_probe.sh has been run and the values are
-    backed by real output. Never populate them to make this test pass.
+    PHASE 1B TRANSITION. Until 2026-08-29 this test asserted the opposite: that
+    every server path raised MissingMandatoryValue, so the config could not be
+    used before the machine was probed. Its docstring set the condition for
+    changing it - "only once scripts/server_probe.sh has been run and the values
+    are backed by real output".
+
+    That condition is met. The probe was executed on csrslave and its verbatim
+    output is committed in docs/phase1/. The invariant therefore moves from
+    "must be absent" to "must be real": set, absolute, and not a placeholder.
     """
     cfg = _compose(["env=server"])
+
     for field in ("output_root", "checkpoint_root", "cache_root"):
-        with pytest.raises(MissingMandatoryValue):
-            _ = getattr(cfg.env, field)
+        value = getattr(cfg.env, field)
+        assert value, f"{field} is empty"
+        assert isinstance(value, str)
+        assert PurePosixPath(value).is_absolute(), (
+            f"{field}={value!r} must be an absolute POSIX path on the server"
+        )
+        # Guard against a placeholder creeping back in disguised as a value.
+        assert "???" not in value
+        assert "TODO" not in value.upper()
+        assert "CHANGEME" not in value.upper()
+
+
+def test_server_roots_are_distinct() -> None:
+    """Outputs, checkpoints and cache must not collide.
+
+    Sharing a directory would let checkpoint rotation delete run logs, and
+    would make the cache indistinguishable from results when pruning - which
+    matters on a volume with limited free space.
+    """
+    cfg = _compose(["env=server"])
+    roots = {
+        cfg.env.output_root,
+        cfg.env.checkpoint_root,
+        cfg.env.cache_root,
+    }
+    assert len(roots) == 3, f"server storage roots must be distinct, got {roots}"
+
+
+def test_local_paths_remain_env_var_driven() -> None:
+    """The local env must NOT hard-code paths - it defers to alignlab.paths.
+
+    Populating the server config must not tempt anyone into doing the same
+    locally. Empty means "fall back to ALIGNLAB_* env vars, then repo-relative".
+    """
+    cfg = _compose(["env=local"])
+    assert cfg.env.output_root == ""
+    assert cfg.env.checkpoint_root == ""
+    assert cfg.env.cache_root == ""
 
 
 def test_server_config_is_polite_about_shared_cpu() -> None:

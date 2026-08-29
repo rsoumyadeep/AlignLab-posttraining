@@ -33,15 +33,36 @@ FORBIDDEN = {
 ALLOW_MARKERS = ("#", "//", '"""', "observed", "VERIFIED", "example", "e.g.")
 
 
-def _source_files(repo_root: Path) -> list[Path]:
+# configs/env/ is the ONE place machine-specific values are allowed to live -
+# that is the entire purpose of the env config group. Scanning it would forbid
+# exactly the thing the design exists to permit.
+#
+# Phase 1B note: this exclusion was added when configs/env/server.yaml was
+# populated with verified server paths. Before that the file held only Hydra
+# MISSING placeholders, so the broader scan passed by accident rather than by
+# design. The guard remains fully in force for src/, tests/, scripts/ and the
+# rest of configs/ - and test_machine_specific_paths_are_confined_to_env_group
+# below asserts that configs/env/ really is the only exception.
+EXCLUDED_FROM_SCAN = ("configs/env",)
+
+
+def _is_excluded(path: Path, repo_root: Path) -> bool:
+    rel = path.relative_to(repo_root).as_posix()
+    return any(rel.startswith(prefix) for prefix in EXCLUDED_FROM_SCAN)
+
+
+def _source_files(repo_root: Path, apply_exclusions: bool = True) -> list[Path]:
     files: list[Path] = []
     for directory in SCANNED_DIRS:
         base = repo_root / directory
         if not base.is_dir():
             continue
         for path in base.rglob("*"):
-            if path.is_file() and path.suffix in SCANNED_SUFFIXES:
-                files.append(path)
+            if not (path.is_file() and path.suffix in SCANNED_SUFFIXES):
+                continue
+            if apply_exclusions and _is_excluded(path, repo_root):
+                continue
+            files.append(path)
     return files
 
 
@@ -76,6 +97,34 @@ def test_no_hardcoded_absolute_paths(repo_root_path: Path, pattern_name: str) ->
         f"Hard-coded machine-specific path ({pattern_name}) found. Route it "
         "through alignlab.paths or a config env group instead:\n"
         + "\n".join(offenders)
+    )
+
+
+def test_machine_specific_paths_are_confined_to_env_group(repo_root_path: Path) -> None:
+    """Machine-specific paths may exist ONLY under configs/env/.
+
+    The complement of the exclusion above. Without this, adding a directory to
+    EXCLUDED_FROM_SCAN would silently widen the hole. Here the scan runs with
+    exclusions OFF, and every hit must be inside configs/env/.
+    """
+    stray: list[str] = []
+
+    for path in _source_files(repo_root_path, apply_exclusions=False):
+        rel = path.relative_to(repo_root_path).as_posix()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:  # pragma: no cover - defensive
+            continue
+        for number, line in enumerate(text.splitlines(), start=1):
+            if _is_prose(line):
+                continue
+            for pattern in FORBIDDEN.values():
+                if pattern.search(line) and not rel.startswith("configs/env"):
+                    stray.append(f"{rel}:{number}: {line.strip()}")
+
+    assert not stray, (
+        "Machine-specific paths must live only in the configs/env/ group:\n"
+        + "\n".join(stray)
     )
 
 
