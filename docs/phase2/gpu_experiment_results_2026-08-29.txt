@@ -1,0 +1,126 @@
+AlignLab Phase 2 - GPU experiment results (VERBATIM)
+Generated: 2026-08-29T21:34:03+05:30
+Host: csrslave  User: rsoumyadeep
+index, name, memory.total [MiB], compute_cap, driver_version
+0, NVIDIA RTX A6000, 49140 MiB, 8.6, 550.144.03
+1, NVIDIA RTX A6000, 49140 MiB, 8.6, 550.144.03
+torch 2.6.0+cu124 | cuda 12.4 | cudnn 90100 | bf16 True
+CUDA_VISIBLE_DEVICES=0 (single GPU, as approved)
+
+########## E10 - SDPA BACKENDS ##########
+============================================================================================
+E10 - SDPA backends: same maths, different memory
+============================================================================================
+torch      : 2.6.0+cu124
+gpu        : NVIDIA RTX A6000 | 47.53 GiB | cc 8.6
+cuda       : 12.4 | cudnn 90100
+dtype      : torch.bfloat16 | B=4 H=16 d_k=64 | causal | median of 10 iters | seed 20260829
+
+     T     backend        ms   peak MiB     MiB/T   max|diff vs MATH|
+--------------------------------------------------------------------------------------------
+   512        MATH     1.482      189.2    0.3694                   -
+   512   EFFICIENT     0.071        8.0    0.0156           7.812e-03
+   512       FLASH     0.075        8.1    0.0159           7.812e-03
+
+  1024        MATH     5.588      652.1    0.6368                   -
+  1024   EFFICIENT     0.180       16.0    0.0156           1.562e-02
+  1024       FLASH     0.158       16.2    0.0159           1.562e-02
+
+  2048        MATH    22.177     2464.1    1.2032                   -
+  2048   EFFICIENT     0.558       32.0    0.0156           1.562e-02
+  2048       FLASH     0.394       32.5    0.0159           1.562e-02
+
+  4096        MATH    82.433     9568.3    2.3360                   -
+  4096   EFFICIENT     2.120       64.0    0.0156           1.562e-02
+  4096       FLASH     1.479       65.0    0.0159           1.562e-02
+
+============================================================================================
+Read two things:
+  1. the diff column - all backends compute the SAME function
+  2. 'MiB/T' - for MATH this GROWS with T (peak is quadratic);
+     for FLASH/EFFICIENT it should stay roughly constant (linear peak)
+============================================================================================
+
+########## E4 - ATTENTION VARIANTS ##########
+======================================================================================
+E4 - MHA vs MQA vs GQA
+======================================================================================
+torch      : 2.6.0+cu124
+device     : cuda
+gpu        : NVIDIA RTX A6000 | 47.53 GiB | cc 8.6
+dtype      : torch.bfloat16
+d_model=1024 n_heads=16 d_k=64
+latency    : B=4, T=512, median of 10 iters
+kv cache   : B=1, T=4096, 2 bytes/elt
+
+ variant  H_kv       params   vs MHA  KV cache MiB   vs MHA  latency ms   peak MiB
+----------------------------------------------------------------------------------
+     MHA    16    4,194,304 100.00%          16.0 100.00%        0.85      104.4
+     GQA     8    3,145,728  75.00%           8.0  50.00%        0.81       98.4
+     GQA     4    2,621,440  62.50%           4.0  25.00%        0.82       97.4
+     GQA     2    2,359,296  56.25%           2.0  12.50%        0.81       96.9
+     MQA     1    2,228,224  53.12%           1.0   6.25%        0.81       96.6
+
+======================================================================================
+Expected reading:
+  * params fall, but only the W_K/W_V half - W_Q and W_O are a floor
+  * KV cache falls LINEARLY with H_kv: MQA is 1/H of MHA
+  * latency is broadly similar - after repeat_kv the matmuls have the
+    same shape, so GQA is a MEMORY win, not a FLOP win
+======================================================================================
+
+########## E8 - KV CACHE ##########
+====================================================================================
+E8 - KV cache correctness and cost
+====================================================================================
+torch 2.6.0+cu124 | device cuda | dtype torch.bfloat16
+gpu NVIDIA RTX A6000 | 47.53 GiB | cc 8.6
+model: d_model=256 layers=4 heads=4 params=3,211,520
+seed=20260829, greedy decoding
+
+CORRECTNESS  max|full - cached| = 9.766e-03
+             (torch.bfloat16 round-off, NOT an approximation)
+             bf16 eps = 7.812e-03; a difference of this order is the REPRESENTATION LIMIT,
+             not an algorithmic error.
+
+ new tokens  no cache ms   cache ms   speedup  no-cache/tok  cache/tok  cache MiB
+------------------------------------------------------------------------------------
+         16         63.1       51.8     1.22x         3.946      3.235       0.06
+         32        109.0      103.7     1.05x         3.407      3.241       0.12
+         64        217.3      206.6     1.05x         3.396      3.228       0.25
+        128        438.2      419.9     1.04x         3.423      3.281       0.50
+        256        879.1      841.0     1.05x         3.434      3.285       1.00
+
+====================================================================================
+NOTE ON THE GPU RUN: at this model size (3.2M params, T <= 260)
+the per-step cost is dominated by Python and kernel-launch
+overhead, so BOTH columns sit flat and the O(T^2) vs O(T)
+difference is INVISIBLE underneath it. The CPU run shows the
+effect clearly. This is a limitation of the experiment scale on
+fast hardware, NOT evidence against KV caching.
+
+Read the per-token columns: 'no-cache/tok' should GROW with length
+(each step reprocesses the whole prefix), while 'cache/tok' stays
+roughly flat. That difference IS the O(T^2) -> O(T) argument.
+====================================================================================
+
+########## E7 - NORMALIZATION ##########
+==============================================================================
+E7 - LayerNorm vs RMSNorm
+==============================================================================
+torch 2.6.0+cu124 | device cuda | dtype torch.bfloat16
+B=8 T=512 | median of 30 iters | seed=20260829
+
+ d_model   LN par  RMS par   oursLN  fusedLN  oursRMS  vs oursLN  vs fusedLN
+------------------------------------------------------------------------------
+     512    1,024      512    0.108    0.032    0.141      0.77x       0.22x
+    1024    2,048    1,024    0.181    0.046    0.256      0.70x       0.18x
+    4096    8,192    4,096    0.580    0.162    0.928      0.62x       0.17x
+
+input offset by +10.0:
+  LayerNorm  output mean = +0.000000   (centred)
+  RMSNorm    output mean = +0.994997   (offset SURVIVES)
+
+That surviving offset IS the difference. RMSNorm normalises
+magnitude only; whether the lost centring matters is empirical.
+==============================================================================
