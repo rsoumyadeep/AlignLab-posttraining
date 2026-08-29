@@ -276,3 +276,92 @@ DDP, `torch.compile`, quantization. These belong to Phases 2–4 and are
 this repository.
 
 **Related:** [[phase1-foundation]] · [[phase1-code-explanation]]
+
+---
+
+# Phase 1B Addendum — Measured on Real Ampere Hardware
+
+The concepts above were executed on the **local CPU-only** machine. Phase 1B ran
+on the department server (2 × RTX A6000, compute capability 8.6), which makes
+two of them checkable against real GPU hardware rather than a table.
+
+Environment: `torch 2.6.0+cu124`, CUDA 12.4, cuDNN 9.1.0, Python 3.11.16.
+
+## Concept 10 — bf16 support: inferred vs measured
+
+**What it does.** `torch.cuda.is_bf16_supported()` reports whether the current
+CUDA device can execute bfloat16 arithmetic.
+
+**Why AlignLab uses it.** It decides whether mixed-precision training is worth
+enabling. Getting it wrong wastes effort in Phase 3 either way — enabling bf16
+on hardware that emulates it is slow; skipping it on hardware that supports it
+natively leaves throughput unclaimed.
+
+**Expected result.** Compute capability 8.6 is Ampere, so bf16 *should* be
+natively supported.
+
+**Actual result.** ✅ Confirmed — but note it was confirmed, not assumed:
+
+```
+torch.cuda.is_available()      : True
+torch.cuda.device_count()      : 2
+  gpu0: NVIDIA RTX A6000 | 47.53 GiB | cc=8.6 | SMs=84
+  gpu1: NVIDIA RTX A6000 | 47.53 GiB | cc=8.6 | SMs=84
+torch.cuda.is_bf16_supported() : True
+
+--- bf16 matmul actually executed ---
+bf16 result   : torch.bfloat16 (512, 512) finite: True
+```
+
+**The methodological point.** The capability flag is still only a claim by the
+library. A bf16 matmul was therefore executed and its output checked finite.
+The inference from architecture happened to be right — but it cost one line to
+verify, and Phase 1A had deliberately labelled it `NOT TESTED` rather than
+assert it. Architecture implies capability; it does not observe it.
+
+**Common mistakes.** Reading `torch.cuda.is_available() == True` and assuming
+bf16 follows — it does not on pre-Ampere cards (the local GTX 1050, cc 6.1, has
+no bf16 at all). Also: `is_bf16_supported()` describes the *current* device, so
+on a mixed-GPU machine it must be checked per device.
+
+**Usable VRAM note.** `nvidia-smi` reports 49140 MiB; torch reports **47.53
+GiB** (≈48,670 MiB) of usable memory. The gap is display/driver reserved
+memory. Budget against the number torch reports, not the marketing figure.
+
+## Concept 11 — Float non-associativity, now across two real machines
+
+Concept 8 demonstrated non-associativity synthetically, by summing one array in
+two orders. Phase 1B produced the same phenomenon *unintentionally*, across two
+machines, which is a stronger illustration because nobody arranged it.
+
+Same commit, same seed, same config, `device=cpu` on both:
+
+```
+step  local (torch 2.13.0+cpu, Windows)   server (torch 2.6.0+cu124, Linux)
+5     8.354138374328613                   8.35413932800293
+15    11.478750228881836                  11.478750228881836   <- identical
+30    5.502205848693848                   5.502206325531006
+```
+
+**Expected result.** Tier C — comparable, not bitwise identical.
+
+**Actual result.** ✅ Exactly that: agreement to roughly **1e-7 relative**.
+
+**The trap, and it is a good one.** The console logs print six decimals. At six
+decimals *every* step printed identically — `8.354139`, `11.478750`,
+`5.502206`. It looked like perfect cross-machine reproducibility. Only the
+full-precision `metrics.jsonl` showed the divergence. And step 15 happens to
+match bitwise, so checking one step could have "confirmed" the wrong conclusion.
+
+**Diagnostic worth internalising.** The magnitude of a disagreement tells you
+its cause. Divergence in the *seventh* significant figure means the RNG streams
+are identical and only the arithmetic differs. Divergence in the *first* would
+mean the seeds or the data order differ — a different bug entirely, and a much
+more serious one.
+
+**Connection.** This is the empirical basis for the Tier A / B / C framework in
+`alignlab/seeding.py`. It also warns against a real failure mode in later
+phases: with a formatted log, a genuine reproducibility bug can hide behind
+rounding. Compare full-precision artifacts, not console output.
+
+**Related:** [[phase1b-two-environments]]

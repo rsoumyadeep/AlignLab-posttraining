@@ -146,11 +146,16 @@ floats will differ and demanding otherwise wastes a day.
 
 ---
 
-## Q7. Why is the server config file deliberately broken?
+## Q7. Why was the server config file deliberately broken?
 
-Every path in `configs/env/server.yaml` is Hydra `MISSING` (`???`), so composing
-it raises. The server has never been logged into; the storage layout is not
-known.
+> **Phase 1B update:** the placeholders are now *gone* — replaced with paths
+> verified on the live server. Keep the question anyway, because the interesting
+> part is why they existed at all, and the answer generalises. See Q15 for how
+> the transition was handled without weakening the guard.
+
+Through Phase 1A, every path in `configs/env/server.yaml` was Hydra `MISSING`
+(`???`), so composing it raised. The server had not been logged into; the
+storage layout was not known.
 
 The alternative was to write a plausible path — for instance a home directory
 guessed from the pattern visible in the system report. It would look reasonable
@@ -159,8 +164,13 @@ partition that other people's jobs depend on.
 
 **The general principle:** a plausible guess presented as a value is worse than
 a loud absence. An empty field asks a question; a guessed field answers it
-wrongly and silently. `test_config.py::test_server_paths_are_mandatory_and_unset`
-enforces it.
+wrongly and silently.
+
+**And the payoff was real.** Had a path been guessed, the natural guess would
+have been `~/.cache/huggingface` for the model cache. The live probe showed
+`~/.cache` was **already 24 GB** on a volume with 77 GB free — so the guess would
+have been actively harmful, not merely unverified. The cache now lives under the
+project instead, where its size is visible and separately prunable.
 
 ---
 
@@ -249,3 +259,162 @@ Answering this well matters more than defending the design.
 
 **Related:** [[phase1-foundation]] · [[phase1-code-explanation]] ·
 [[pytorch-rng-and-state]]
+
+---
+
+# Phase 1B — Questions From the Real Server
+
+Five more, all answerable from work actually done on `csrslave`.
+
+## Q11. You needed a scheduler. How did you check whether the cluster had one?
+
+**Weak answer:** "I ran `which sbatch` and it was there, so I used SLURM."
+
+**Strong answer.** That check passes and is *wrong*. On this machine:
+
+```
+scontrol --version   → slurm 22.05.9         ← installed
+which sbatch srun    → all present           ← installed
+/etc/slurm/slurm.conf → configured           ← configured
+scontrol ping        → Slurmctld(primary) at csrmaster is DOWN
+systemctl is-active slurmctld → failed
+```
+
+Every *surface* check says SLURM is available. Every *functional* check says no
+job can be submitted. Had I stopped at `which sbatch` — which is the common way
+to check — the whole project would have been built around a scheduler that does
+not work, and that would have surfaced only when the first real training job
+silently failed to queue.
+
+**The generalisable principle:** test the capability you need, not a proxy for
+it. Binary-on-PATH is a proxy. `scontrol ping` is the capability.
+
+**The consequence I had to design around:** with no scheduler, **nothing
+enforces GPU allocation**. Compute mode is `Default`, no MIG, no cgroups, and
+eight other users share the box. Two people can start jobs on the same GPU and
+simply exhaust its memory. Checking `nvidia-smi` before launch is not etiquette
+here — it is the entire allocation mechanism.
+
+## Q12. You said the GPU supports bf16. How do you know?
+
+**Weak answer:** "It's an A6000, compute capability 8.6, so it's Ampere, so
+bf16 is supported."
+
+That reasoning is correct — and it is still an *inference*. Phase 1A recorded it
+as `NOT TESTED` for exactly that reason.
+
+**Strong answer.** `torch.cuda.is_bf16_supported()` returned `True`, **and** a
+bf16 matmul was executed and its output checked finite. Two steps, because the
+capability flag is itself only a claim by the library; running the op is the
+observation.
+
+The inference happened to be right. It cost one line to check, and a wrong
+inference would have propagated into every Phase 3 precision decision.
+
+**Follow-up you should expect:** *"Where else did you infer instead of
+measure?"* — Answer honestly: the SLURM requeue path is still `IMPLEMENTED, NOT
+TESTED`, and multi-GPU RNG restore has never executed. Both are listed as
+limitations, not quietly omitted.
+
+## Q13. Your two machines run the same code and seed. Do they produce the same numbers?
+
+**No — and the interesting part is how nearly I got this wrong.**
+
+The console logs print six decimals. At six decimals, every logged step matched
+exactly across the two machines: `8.354139`, `11.478750`, `5.502206`. It looked
+like perfect cross-machine reproducibility, and I said so before checking.
+
+The full-precision `metrics.jsonl` tells a different story:
+
+```
+local (torch 2.13.0+cpu, Win)   server (torch 2.6.0+cu124, Linux)
+8.354138374328613               8.35413932800293
+11.478750228881836              11.478750228881836   ← identical, coincidence
+5.502205848693848               5.502206325531006
+```
+
+Agreement to about **1e-7 relative**. And note step 15 matches bitwise — so
+checking a single step could have "confirmed" the wrong conclusion.
+
+**The diagnostic worth carrying into any reproducibility argument:** the
+*magnitude* of a disagreement identifies its cause. Divergence in the seventh
+significant figure means the RNG streams are identical and only the arithmetic
+differs — different torch versions, different BLAS, different platform.
+Divergence in the *first* significant figure would mean the seeds or data order
+differ, which is a real bug and a much more serious one.
+
+**And the operational lesson:** a genuine reproducibility bug can hide behind
+log rounding. Compare full-precision artifacts, not console output.
+
+## Q14. What is the actual bottleneck on your training server?
+
+**Weak answer:** "VRAM — it's got 2×48 GB, so I can train up to about X
+parameters."
+
+**Strong answer:** **disk.** The GPUs are generous; the filesystem is not:
+
+```
+/dev/sda1  7.3T  6.8T  82G  99%  /data
+```
+
+99% full, shared, and home lives on it. The May hardware report had shown 1.9 TB
+free — four months of shared use consumed it. That single number changed real
+decisions:
+
+- The uv package cache would have added ~5 GB to `/data`. Pointing
+  `UV_CACHE_DIR` at `/tmp` (a separate 1.6 TB NVMe) kept it off the constrained
+  volume, and it was deleted afterwards.
+- `cache_root` was deliberately set **away** from `~/.cache/huggingface`, since
+  `~/.cache` was already 24 GB — so the AlignLab cache stays visible and
+  separately prunable.
+- Checkpoint rotation stops being hygiene and becomes capacity planning. A few
+  unrotated 1.5 B checkpoints would exhaust what remains.
+
+**What I did NOT do:** delete anything to make room, including a 47 GB conda
+install that is not mine to judge. Freeing space on a shared machine is a
+decision for its owner.
+
+## Q15. Your test suite failed after you configured the server. What did you do?
+
+Three tests failed. The response matters more than the fix.
+
+**Two of them meant the *test* was wrong, not the code.**
+`test_no_hardcoded_absolute_paths` forbade machine-specific paths anywhere under
+`configs/`. But `configs/env/` is by design the single place such values may
+live — that is the entire purpose of an env config group. The guard forbade
+exactly what the design exists to permit. It had passed in Phase 1A only because
+the file held placeholders, so the rule had never been exercised against its
+intended exception.
+
+I narrowed the scope — **and then closed the hole I had just opened** by adding
+`test_machine_specific_paths_are_confined_to_env_group`, which re-runs the scan
+with exclusions *off* and asserts every hit lies under `configs/env/`. Now
+adding a directory to the exclusion list cannot silently widen the exemption.
+
+**The third was a planned transition.** The old test asserted the server paths
+raised `MissingMandatoryValue`. Its own docstring had pre-authorised the change:
+*"only once `scripts/server_probe.sh` has been run and the values are backed by
+real output."* That condition was met, so the invariant moved from "must be
+absent" to "must be real" — set, absolute, and not a disguised placeholder.
+
+**The distinction I would defend:** weakening a test to make a failure go away
+is misconduct; correcting a test that encodes a superseded or over-broad
+invariant is maintenance. The way to tell them apart is whether the *replacement
+invariant is at least as strong*. Here it is — three new tests exist where one
+was changed.
+
+## Explain Back
+
+> [USER CHECKPOINT]
+>
+> Answer Q11 and Q13 aloud in your own words before reading the answers again.
+>
+> Then these, which have no written answer here:
+> - Your `env/server.yaml` now contains an absolute path to a specific user's
+>   home directory, committed to Git. Defend that, or argue it should be an
+>   environment variable instead. Which would you actually ship?
+> - The server has no working scheduler and eight active users. Design the
+>   minimum coordination mechanism you would propose to the group — and say what
+>   it costs.
+
+**Related:** [[phase1b-two-environments]] · [[phase1-code-explanation]]

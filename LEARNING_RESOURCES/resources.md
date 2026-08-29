@@ -11,15 +11,33 @@ An honest register of external resources. Status vocabulary is fixed:
 
 ---
 
-## ⚠ Status of this register as of Phase 1A (2026-08-29)
+## ⚠ Status of this register as of Phase 1B (2026-08-29)
 
-**Every external resource below is `NOT INSPECTED`.**
+**Every external resource below is still `NOT INSPECTED`.**
 
 No web page, paper, repository, blog post, video or piece of official
-documentation was accessed during Phase 1A. No browsing tool was used. The
-implementation was written from working knowledge and verified by **executing
-it** — 101 passing tests and the example scripts in `PYTORCH_CONCEPTS/` are the
-evidence base for Phase 1A, not any external source.
+documentation was accessed during Phase 1A **or Phase 1B**. No browsing tool was
+used in either phase. The implementation was written from working knowledge and
+verified by **executing it** — the passing test suites (104 local / 105 server)
+and the example scripts in `PYTORCH_CONCEPTS/` are the evidence base, not any
+external source.
+
+**Phase 1B note — two queued questions were answered empirically instead.**
+Rather than reading documentation, the server itself was measured:
+
+- *"Does the department server run SLURM?"* — answered by `scontrol ping`, not
+  by the SLURM docs. Result: installed (22.05.9) but the controller on
+  `csrmaster` is **DOWN**, so no job can be submitted. This is a fact about
+  **this machine**, and no document could have supplied it. The queued SLURM
+  documentation entry below is consequently **lower priority than before** — it
+  would explain a mechanism we currently cannot use.
+- *"Is bf16 actually supported?"* — answered by running
+  `torch.cuda.is_bf16_supported()` and executing a bf16 matmul, not by consulting
+  an architecture table.
+
+Direct measurement is not a substitute for reading the papers in Phases 2–6. It
+is the right tool for questions about a specific machine's current state, and
+the wrong tool for questions about why an algorithm works.
 
 This is recorded plainly because the alternative — listing plausible-looking
 citations for material that was never opened — would be fabrication, and would
@@ -91,8 +109,13 @@ Type:            Official documentation
 URL/Identifier:  https://slurm.schedmd.com/sbatch.html
 Topic:           --signal=USR1@<seconds>, scontrol requeue
 Access Status:   NOT INSPECTED
-Blocked on:      Whether the department server has SLURM at all is UNKNOWN.
-                 Inspecting this before that is answered may be wasted effort.
+Priority:        LOWERED. Phase 1B VERIFIED that SLURM is installed on csrslave
+                 but NON-FUNCTIONAL (Slurmctld at csrmaster is DOWN, slurmctld
+                 and slurmd services failed). Jobs run directly under tmux, so
+                 the --signal=USR1 mechanism this document describes is not
+                 currently reachable. Revisit only if the controller is fixed.
+                 NOTE: the SIGUSR1 handling itself is now VERIFIED anyway, via
+                 an external "kill -USR1" on a live run - no scheduler needed.
 ```
 
 ### Phase 2+ (modelling)
