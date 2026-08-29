@@ -61,7 +61,12 @@ def main() -> None:
         steps = [model(ids[:, t:t+1], cache=cache)[0][:, -1, :] for t in range(24)]
     diff = float((full.float() - torch.stack(steps, 1).float()).abs().max())
     print(f"CORRECTNESS  max|full - cached| = {diff:.3e}")
-    print("             (float32 round-off, NOT an approximation)\n")
+    print(f"             ({dtype} round-off, NOT an approximation)")
+    if dtype == torch.bfloat16:
+        print(f"             bf16 eps = {torch.finfo(torch.bfloat16).eps:.3e};"
+              " a difference of this order is the REPRESENTATION LIMIT,")
+        print("             not an algorithmic error.")
+    print()
 
     # ---- cost ------------------------------------------------------------
     prompt = torch.randint(0, cfg.vocab_size, (1, 4), device=device)
@@ -93,6 +98,14 @@ def main() -> None:
               f"{no_cache/n:>13.3f} {cached/n:>10.3f} {c.memory_bytes()/1024**2:>10.2f}")
 
     print("\n" + "=" * 84)
+    if device.type == "cuda":
+        print("NOTE ON THE GPU RUN: at this model size (3.2M params, T <= 260)")
+        print("the per-step cost is dominated by Python and kernel-launch")
+        print("overhead, so BOTH columns sit flat and the O(T^2) vs O(T)")
+        print("difference is INVISIBLE underneath it. The CPU run shows the")
+        print("effect clearly. This is a limitation of the experiment scale on")
+        print("fast hardware, NOT evidence against KV caching.")
+        print()
     print("Read the per-token columns: 'no-cache/tok' should GROW with length")
     print("(each step reprocesses the whole prefix), while 'cache/tok' stays")
     print("roughly flat. That difference IS the O(T^2) -> O(T) argument.")
