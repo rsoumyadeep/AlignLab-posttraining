@@ -1,0 +1,2 @@
+cd "D:\projects-for-placements\AlignLab_LATEST(AUG-30)_CLAUDE"
+claude --enable-auto-mode --permission-mode auto

@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# AlignLab .gitattributes
+#
+# This project is authored on Windows and executed on a Linux server.
+# Shell scripts MUST keep LF endings or the server's interpreter fails with
+# a confusing "bad interpreter: /bin/bash^M" error. Everything else is
+# normalised to LF in the repository and checked out natively.
+# ---------------------------------------------------------------------------
+
+# Default: normalise text to LF in the repo, native in the working copy.
+* text=auto
+
+# Never let these become CRLF - they run on Linux.
+*.sh   text eol=lf
+*.slurm text eol=lf
+
+# Windows-only helpers keep CRLF.
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary - never touch.
+*.pt   binary
+*.pth  binary
+*.bin  binary
+*.safetensors binary
+*.png  binary
+*.jpg  binary
