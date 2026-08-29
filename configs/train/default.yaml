@@ -13,9 +13,22 @@ grad_clip: 1.0
 log_every: 5
 checkpoint_every: 10
 
-# Retain only the N newest checkpoints. The server data volume was observed
-# 74% full and is shared, so unbounded checkpointing is both risky and rude.
-keep_last_checkpoints: 3
+# Retain only the N newest checkpoints.
+#
+# STORAGE-AWARE DEFAULT, NOT A UNIVERSAL REQUIREMENT (Phase 1C decision).
+# The department server's /data volume is storage constrained and shared. A
+# full-parameter SFT checkpoint for Qwen2.5-1.5B is an ESTIMATED ~15.5 GB
+# (3.1 GB bf16 weights + two 6.2 GB fp32 AdamW moment tensors), so the previous
+# default of 3 would have consumed ~46 GB from a single run.
+#
+# This is a DEFAULT, not a hard-coded limit - the training implementation reads
+# it from config and never assumes 1. Override per experiment, e.g. for LoRA
+# where checkpoints are ~100x smaller:
+#
+#   python -m alignlab.train train.keep_last_checkpoints=3
+#
+# See docs/phase1/STORAGE_POLICY.md.
+keep_last_checkpoints: 1
 
 # Resume automatically from the newest checkpoint in the run's checkpoint
 # directory, if one exists.

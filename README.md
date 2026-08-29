@@ -33,9 +33,9 @@ synthetic linear regression.
 
 | Phase | Status |
 |---|---|
-| 1A — Foundation (local) | ✅ **COMPLETE**, 109 passed / 2 skipped |
+| 1A — Foundation (local) | ✅ **COMPLETE**, 122 passed / 2 skipped |
 | 1B — Foundation (server) | ✅ **COMPLETE**, 110 passed / 1 skipped on GPU server |
-| 1C — Version alignment + storage policy | ✅ **COMPLETE** |
+| 1C — Version alignment, storage policy, path-wiring fix | ✅ **COMPLETE** |
 | 2 — Transformer understanding | ⬜ not started |
 | 3 — SFT | ⬜ not started |
 | 4 — PEFT (LoRA / QLoRA) | ⬜ not started |
@@ -82,7 +82,7 @@ uv venv --python 3.11 .venv
 uv pip install -e ".[tracking,dev]"          # local: CPU torch
 
 python scripts/env_report.py          # what this machine actually has
-python -m pytest -q                   # 109 passed, 2 skipped
+python -m pytest -q                   # 122 passed, 2 skipped
 python -m alignlab.train              # foundation smoke run (toy model)
 ```
 
@@ -115,7 +115,7 @@ package cache stays off the 99%-full `/data` volume. Delete it afterwards.
 ```
 src/alignlab/       foundation modules (see CODE_EXPLANATION/phase1/)
 configs/            Hydra tree; env/ group absorbs machine differences
-tests/              111 tests; no network or credentials needed
+tests/              124 tests; no network or credentials needed
 scripts/            env_report.py, server_probe.sh (executed on csrslave)
 docs/phase1/        phase reports, storage policy, server probe evidence
 

@@ -197,6 +197,7 @@ def capture_environment(
     config: dict[str, Any] | None = None,
     seed: int | None = None,
     notes: dict[str, Any] | None = None,
+    roots: dict[str, str] | None = None,
 ) -> RunManifest:
     """Capture everything knowable about this run, right now.
 
@@ -205,6 +206,11 @@ def capture_environment(
         config: the fully resolved configuration (already a plain dict).
         seed: the master seed actually applied.
         notes: free-form extras, for example a deferred-work marker.
+        roots: the storage roots the run ACTUALLY resolved, from
+            paths.describe_roots(...) with the configured values passed in.
+            Omitting this falls back to environment-variable resolution, which
+            can disagree with what the run used - the exact discrepancy that
+            exposed the decorative-config bug in Phase 1C.
     """
     config = config or {}
     return RunManifest(
@@ -219,7 +225,7 @@ def capture_environment(
         platform=describe_platform(),
         hardware=describe_hardware().as_dict(),
         packages=package_versions(),
-        paths=describe_roots(),
+        paths=roots if roots is not None else describe_roots(),
         env_vars=relevant_env_vars(),
         python_executable=sys.executable,
         notes=notes or {},

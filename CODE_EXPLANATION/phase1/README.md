@@ -440,3 +440,142 @@ drift between two torch majors — which is what actually threatened the Tier B
 structural guarantee. Tier C still governs cross-machine numerics.
 
 **Related:** [[storage-policy]] · [[phase1b-two-environments]]
+
+---
+
+# Phase 1C Follow-up — The Decorative-Config Bug
+
+## 18. The bug
+
+`configs/env/output_root` and `checkpoint_root` **had no effect on anything**.
+
+`train.py` called:
+
+```python
+directory = run_dir(run_name)            # no configured value passed
+ckpt_dir  = checkpoint_root() / run_name # no configured value passed
+```
+
+and those functions resolved only `ALIGNLAB_*` environment variable → repo-relative
+default. The configured values were read from YAML, type-checked by the schema,
+written into the manifest — and then **never consulted**.
+
+## 19. How it was discovered
+
+Not by a failing test. Every test passed.
+
+While verifying the *Hugging Face cache* wiring on the server, I printed a real
+`run_manifest.json` beside the config and noticed a one-line disagreement:
+
+```
+configured cache_root  = /data/home/rsoumyadeep/AlignLab/.cache/huggingface   (server.yaml)
+manifest  cache_root   = /data/home/rsoumyadeep/AlignLab/.cache               (recorded)
+```
+
+Two sources of truth that should have been one. Pulling that thread showed the
+same applied to `output_root` and `checkpoint_root`, and a direct comparison
+confirmed it:
+
+```
+cfg.env.checkpoint_root : /data/home/rsoumyadeep/AlignLab/checkpoints
+paths.checkpoint_root() : D:\...\AlignLab_LATEST(AUG-30)_CLAUDE\checkpoints
+```
+
+**Why it hid for two phases:** the configured server values had been set to
+exactly the paths the repo-relative default already produced. Config and reality
+agreed *by coincidence*. Every observable behaviour was correct; only the
+mechanism was wrong.
+
+## 20. Why it matters
+
+The env config group is the **entire mechanism** for keeping machine-specific
+paths out of the source tree — the thing `test_no_hardcoded_paths.py` exists to
+protect. If it does not take effect:
+
+- editing `server.yaml` to move checkpoints onto a different volume would do
+  nothing, silently;
+- on a storage-constrained shared server, artifacts land wherever the default
+  points, which is exactly the outcome the config was written to prevent;
+- worse, **the manifest recorded the wrong location**, so the mistake would not
+  even be auditable afterwards. A wrong record is worse than no record.
+
+It is the same class of failure as the Hugging Face gap found minutes earlier:
+*a declared configuration value that nothing reads.*
+
+## 21. The correction
+
+Smallest clean fix — one resolution helper, one explicit precedence order:
+
+```python
+def _resolve_root(configured, var_name, default_subdir) -> Path:
+    if configured:                       # 1. Hydra env config group
+        return Path(configured).expanduser().resolve()
+    raw = os.environ.get(var_name)       # 2. ALIGNLAB_* environment variable
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return (repo_root() / default_subdir).resolve()   # 3. repo-relative
+```
+
+`output_root`, `checkpoint_root`, `cache_root`, `run_dir` and `describe_roots`
+all take an optional `configured` argument; `train.py` passes `cfg.env.*`.
+
+**Backward compatibility is exact.** An empty string counts as "not
+configured", and `configs/env/local.yaml` deliberately leaves all three roots
+empty — so local resolution is byte-for-byte what it was before.
+
+**No unrelated architectural change.** No new abstraction, no new config keys,
+no change to how runs are named or directories laid out.
+
+`capture_environment(..., roots=...)` now receives the resolved roots so the
+manifest records what the run *used*. That closes the discrepancy that revealed
+the bug in the first place.
+
+## 22. Tests proving the correction
+
+`tests/test_config_path_wiring.py` — 13 tests:
+
+| Test | Proves |
+|---|---|
+| `test_configured_output_root_wins_over_env_var` | config beats env var |
+| `test_configured_checkpoint_root_wins_over_env_var` | same for checkpoints |
+| `test_empty_configured_value_falls_through` | empty ⇒ env var (local unchanged) |
+| `test_run_dir_honours_configured_root` | run dirs follow config |
+| `test_describe_roots_reports_configured_values` | manifest reports truth |
+| `test_paths_never_silently_use_unrelated_location` | **would have failed before the fix** |
+| `test_run_writes_to_configured_roots` | end-to-end: artifacts land in a non-default location, and nothing leaks into repo defaults |
+| `test_manifest_records_the_roots_actually_used` | the exact discrepancy that exposed the bug |
+| `test_local_env_behaviour_unchanged` | Phase 1 behaviour preserved |
+| `test_server_config_roots_are_absolute_and_used` | server paths resolve to themselves |
+| `test_default_retention_is_one` | storage-aware default |
+| `test_retention_is_overridable_per_experiment` | default, not hard-coded |
+| `test_retention_default_actually_rotates_to_one` | takes effect in a real run |
+
+## 23. A test-isolation bug found while writing those tests
+
+`test_manifest_records_the_roots_actually_used` failed on first run, and the
+cause was not the code under test. `configure_hf_cache()` deliberately respects
+an already-set `HF_HUB_CACHE` — so the *first* test to call `train()` pinned the
+variable process-wide and every later test inherited it.
+
+Fixed in `conftest.py`: the autouse fixture now clears the HF cache variables
+alongside the `ALIGNLAB_*` ones. Worth recording because the failure looked like
+a bug in the new feature and was actually cross-test contamination.
+
+## 24. Checkpoint retention default → 1
+
+`keep_last_checkpoints` changed from **3 → 1** in both the schema and
+`configs/train/default.yaml`.
+
+Storage-aware default, **not** a universal requirement and **not** hard-coded:
+`save_checkpoint` still reads the value from config and never assumes 1.
+Override per experiment — LoRA checkpoints are ~100× smaller:
+
+```bash
+python -m alignlab.train train.keep_last_checkpoints=3
+```
+
+Rationale is in `docs/phase1/STORAGE_POLICY.md`: a full-SFT checkpoint for a
+1.5 B model is an **ESTIMATED** ~15.5 GB, so keeping 3 would consume ~46 GB from
+a single run on a constrained shared volume.
+
+**Related:** [[storage-policy]] · [[phase1b-two-environments]]

@@ -35,15 +35,24 @@ _ALIGNLAB_VARS = (
     ENV_VAR_RUN_NAME,
 )
 
+# Hugging Face cache variables are PROCESS-GLOBAL and are set by
+# paths.configure_hf_cache() during any train() call. Because that function
+# deliberately respects an already-set value, one test running train() would
+# otherwise pin the cache location for every later test in the same session -
+# which is exactly how a later assertion started failing for a reason that had
+# nothing to do with the code under test. Cleared per test.
+_HF_VARS = ("HF_HUB_CACHE", "HF_DATASETS_CACHE", "HF_HOME", "TRANSFORMERS_CACHE")
+
 
 @pytest.fixture(autouse=True)
 def clean_alignlab_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Remove AlignLab environment variables before every test.
+    """Remove AlignLab and Hugging Face cache variables before every test.
 
-    Autouse, because a variable left set in the developer's shell would
-    otherwise silently change what the tests exercise.
+    Autouse, because a variable left set in the developer's shell - or set by
+    an earlier test in the same process - would otherwise silently change what
+    the tests exercise.
     """
-    for name in _ALIGNLAB_VARS:
+    for name in (*_ALIGNLAB_VARS, *_HF_VARS):
         monkeypatch.delenv(name, raising=False)
 
 

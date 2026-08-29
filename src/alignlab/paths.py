@@ -49,32 +49,54 @@ def repo_root() -> Path:
     return here.parents[2]
 
 
-def _root_from_env(var_name: str, default_subdir: str) -> Path:
-    """Resolve one root directory from an environment variable.
+def _resolve_root(
+    configured: str | Path | None, var_name: str, default_subdir: str
+) -> Path:
+    """Resolve one storage root, in strict precedence order.
 
-    An unset variable falls back to ``<repo_root>/<default_subdir>``. That
-    default is appropriate locally and is intentionally not appropriate on a
-    shared server, where the value must be set explicitly.
+        1. ``configured``  - the value from the Hydra env config group
+        2. the environment variable ``var_name``
+        3. ``<repo_root>/<default_subdir>``
+
+    BUG FIX (Phase 1C follow-up). Until this change the ``configured``
+    parameter did not exist: the resolver consulted only the environment
+    variable and the repo-relative default, so ``cfg.env.output_root`` and
+    ``cfg.env.checkpoint_root`` were DECORATIVE. A run on the server appeared
+    to honour them only because the configured values had been set to the same
+    paths the repo-relative default already produced. Changing them in the
+    config would have had no effect whatsoever.
+
+    Rationale for config-first: the env config group is the project's declared
+    source of truth for machine-specific storage, and a value written there
+    must actually take effect. The environment variable remains a genuine
+    fallback, which is what keeps ``configs/env/local.yaml`` - whose roots are
+    deliberately empty strings - behaving exactly as before.
+
+    An empty string counts as "not configured", so an empty config value falls
+    through to the environment variable. That is what preserves the existing
+    local behaviour.
     """
+    if configured:
+        return Path(configured).expanduser().resolve()
     raw = os.environ.get(var_name)
     if raw:
         return Path(raw).expanduser().resolve()
     return (repo_root() / default_subdir).resolve()
 
 
-def output_root() -> Path:
+def output_root(configured: str | Path | None = None) -> Path:
     """Root directory for run outputs (logs, configs, manifests, metrics)."""
-    return _root_from_env(ENV_VAR_OUTPUT_ROOT, "outputs")
+    return _resolve_root(configured, ENV_VAR_OUTPUT_ROOT, "outputs")
 
 
-def checkpoint_root() -> Path:
+def checkpoint_root(configured: str | Path | None = None) -> Path:
     """Root directory for model checkpoints."""
-    return _root_from_env(ENV_VAR_CKPT_ROOT, "checkpoints")
+    return _resolve_root(configured, ENV_VAR_CKPT_ROOT, "checkpoints")
 
 
-def cache_root() -> Path:
+def cache_root(configured: str | Path | None = None) -> Path:
     """Root directory for the Hugging Face / dataset cache."""
-    return _root_from_env(ENV_VAR_CACHE_ROOT, ".cache")
+    return _resolve_root(configured, ENV_VAR_CACHE_ROOT, ".cache")
 
 
 def generate_run_name(prefix: str = "run") -> str:
@@ -91,9 +113,15 @@ def generate_run_name(prefix: str = "run") -> str:
     return f"{prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
 
 
-def run_dir(run_name: str, create: bool = True) -> Path:
-    """Return (and optionally create) the directory for a single run."""
-    path = output_root() / run_name
+def run_dir(
+    run_name: str, create: bool = True, configured: str | Path | None = None
+) -> Path:
+    """Return (and optionally create) the directory for a single run.
+
+    ``configured`` is the ``cfg.env.output_root`` value; passing it is what
+    makes the config authoritative rather than decorative.
+    """
+    path = output_root(configured) / run_name
     if create:
         path.mkdir(parents=True, exist_ok=True)
     return path
@@ -145,15 +173,24 @@ def configure_hf_cache(root: str | Path | None = None) -> dict[str, str]:
     return applied
 
 
-def describe_roots() -> dict[str, str]:
+def describe_roots(
+    output: str | Path | None = None,
+    checkpoint: str | Path | None = None,
+    cache: str | Path | None = None,
+) -> dict[str, str]:
     """Return all resolved roots as strings, for logging and manifests.
 
-    Recorded in every run manifest so that a result can always be traced back
-    to the filesystem layout that produced it.
+    Recorded in every run manifest so a result can always be traced back to the
+    filesystem layout that produced it.
+
+    The configured values MUST be passed through here. Without them the
+    manifest reports the environment-variable resolution while the run actually
+    used the configured paths - which is precisely the discrepancy that
+    exposed the decorative-config bug.
     """
     return {
         "repo_root": str(repo_root()),
-        "output_root": str(output_root()),
-        "checkpoint_root": str(checkpoint_root()),
-        "cache_root": str(cache_root()),
+        "output_root": str(output_root(output)),
+        "checkpoint_root": str(checkpoint_root(checkpoint)),
+        "cache_root": str(cache_root(cache)),
     }

@@ -7,11 +7,15 @@ otherwise be accepted, ignored, and quietly produce a run at the default
 learning rate that nobody notices for hours.
 
 The env group is the mechanism that keeps machine-specific paths out of the
-source tree. configs/env/local.yaml carries real local defaults;
-configs/env/server.yaml carries MISSING (???) for every path, because the
-department server has not been probed and inventing a path would be a
-fabrication. Hydra raises on an unresolved MISSING value, so the server config
-cannot be used until someone fills it in with verified values.
+source tree. configs/env/local.yaml leaves its roots empty, meaning "fall back
+to the ALIGNLAB_* environment variables, then to repo-relative defaults".
+configs/env/server.yaml carries real paths VERIFIED on the machine (they held
+Hydra MISSING until the server was actually probed in Phase 1B).
+
+Those configured values are authoritative: alignlab.paths resolves
+config -> environment variable -> repo-relative default, in that order. Until
+the Phase 1C follow-up they were decorative - the path layer consulted only the
+environment, so a value written here had no effect.
 """
 
 from __future__ import annotations
@@ -57,7 +61,13 @@ class TrainConfig:
     grad_clip: float | None = 1.0
     log_every: int = 5
     checkpoint_every: int = 10
-    keep_last_checkpoints: int = 3
+    # Storage-aware default, not a universal requirement. A full-parameter SFT
+    # checkpoint for a 1.5B model is an ESTIMATED ~15.5 GB (bf16 weights plus
+    # two fp32 AdamW moment tensors), so keeping 3 would consume ~46 GB of the
+    # department server's limited free space from a single run. LoRA
+    # checkpoints are ~100x smaller and can safely raise this per experiment:
+    #     python -m alignlab.train train.keep_last_checkpoints=3
+    keep_last_checkpoints: int = 1
     resume: bool = True
 
 

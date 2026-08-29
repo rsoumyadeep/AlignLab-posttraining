@@ -39,6 +39,7 @@ from alignlab.manifest import capture_environment
 from alignlab.paths import (
     checkpoint_root,
     configure_hf_cache,
+    describe_roots,
     generate_run_name,
     run_dir,
 )
@@ -123,7 +124,7 @@ def train(cfg: DictConfig) -> dict[str, Any]:
     """Run the Phase 1 smoke training loop. Returns a summary dict."""
     # -- run identity ------------------------------------------------------
     run_name = cfg.run_name or generate_run_name(prefix=cfg.experiment)
-    directory = run_dir(run_name)
+    directory = run_dir(run_name, configured=cfg.env.output_root or None)
 
     setup_logging(
         level=cfg.logging.level, log_dir=directory, file_level=cfg.logging.file_level
@@ -131,6 +132,7 @@ def train(cfg: DictConfig) -> dict[str, Any]:
     logger.info("=" * 70)
     logger.info("AlignLab Phase 1 foundation smoke run: %s", run_name)
     logger.info("Run directory: %s", directory)
+    logger.info("Checkpoint root: %s", checkpoint_root(cfg.env.checkpoint_root or None))
     logger.info("=" * 70)
 
     # -- storage policy ----------------------------------------------------
@@ -168,6 +170,13 @@ def train(cfg: DictConfig) -> dict[str, Any]:
         run_name=run_name,
         config=resolved,
         seed=cfg.reproducibility.seed,
+        # Pass the CONFIGURED roots so the manifest records the paths the run
+        # actually used, not the environment-variable resolution.
+        roots=describe_roots(
+            output=cfg.env.output_root or None,
+            checkpoint=cfg.env.checkpoint_root or None,
+            cache=cfg.env.cache_root or None,
+        ),
         notes={
             "phase": "1A",
             "workload": "synthetic toy regression",
@@ -202,7 +211,7 @@ def train(cfg: DictConfig) -> dict[str, Any]:
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
     criterion = torch.nn.MSELoss()
 
-    ckpt_dir = checkpoint_root() / run_name
+    ckpt_dir = checkpoint_root(cfg.env.checkpoint_root or None) / run_name
     start_step = 0
 
     # -- resume ------------------------------------------------------------
