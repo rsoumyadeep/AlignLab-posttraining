@@ -240,3 +240,16 @@ def test_report_round_trips_through_disk(tmp_path: Path) -> None:
     loaded = load_report(path)
     assert loaded["run_name"] == "eval-test"
     assert loaded["results"][0]["metrics"]["score"] == 0.75
+
+
+def test_manifest_records_hf_cache_location(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The manifest must record WHERE a model cache lives.
+
+    Phase 1C: HF_HUB_CACHE is the variable AlignLab actually sets, and it was
+    initially missing from the allowlist - so a run could relocate its model
+    cache without the manifest showing it.
+    """
+    monkeypatch.setenv("HF_HUB_CACHE", "/some/cache/hub")
+    captured = relevant_env_vars()
+    assert captured["HF_HUB_CACHE"] == "/some/cache/hub"
+    assert "HF_DATASETS_CACHE" in captured

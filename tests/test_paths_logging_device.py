@@ -7,6 +7,7 @@ absorbs the difference between the two machines.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -243,3 +244,66 @@ def test_gpu_is_described_when_present() -> None:
     assert info.device_count >= 1
     assert info.devices[0]["name"]
     assert info.devices[0]["total_memory_gib"] > 0
+
+
+# --------------------------------------------------------------------------
+# Hugging Face cache wiring (Phase 1C storage policy)
+# --------------------------------------------------------------------------
+
+
+def test_configure_hf_cache_sets_expected_vars(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """cache_root must actually reach the HF libraries, not just the config."""
+    from alignlab.paths import configure_hf_cache
+
+    for name in ("HF_HUB_CACHE", "HF_DATASETS_CACHE", "HF_HOME"):
+        monkeypatch.delenv(name, raising=False)
+
+    applied = configure_hf_cache(tmp_path / "hf")
+
+    assert applied["HF_HUB_CACHE"] == str((tmp_path / "hf" / "hub").resolve())
+    assert applied["HF_DATASETS_CACHE"] == str((tmp_path / "hf" / "datasets").resolve())
+    assert os.environ["HF_HUB_CACHE"] == applied["HF_HUB_CACHE"]
+
+
+def test_configure_hf_cache_does_not_touch_hf_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """HF_HOME governs the token file; relocating it would break an existing login."""
+    from alignlab.paths import configure_hf_cache
+
+    for name in ("HF_HUB_CACHE", "HF_DATASETS_CACHE", "HF_HOME"):
+        monkeypatch.delenv(name, raising=False)
+
+    configure_hf_cache(tmp_path / "hf")
+    assert "HF_HOME" not in os.environ
+
+
+def test_configure_hf_cache_respects_existing_value(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An operator who exported the variable deliberately outranks our config."""
+    from alignlab.paths import configure_hf_cache
+
+    monkeypatch.setenv("HF_HUB_CACHE", "/deliberate/operator/choice")
+    monkeypatch.delenv("HF_DATASETS_CACHE", raising=False)
+
+    applied = configure_hf_cache(tmp_path / "hf")
+
+    assert "HF_HUB_CACHE" not in applied
+    assert os.environ["HF_HUB_CACHE"] == "/deliberate/operator/choice"
+    assert "HF_DATASETS_CACHE" in applied
+
+
+def test_configure_hf_cache_falls_back_to_cache_root(
+    isolated_roots: dict[str, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With no explicit root, it uses the configured ALIGNLAB_CACHE_ROOT."""
+    from alignlab.paths import configure_hf_cache
+
+    for name in ("HF_HUB_CACHE", "HF_DATASETS_CACHE"):
+        monkeypatch.delenv(name, raising=False)
+
+    applied = configure_hf_cache()
+    assert applied["HF_HUB_CACHE"].startswith(str(isolated_roots["cache"].resolve()))

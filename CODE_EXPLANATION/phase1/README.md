@@ -360,3 +360,83 @@ The two tests skipped locally both **ran and passed** on the server. That is the
 point of marking skips visibly rather than letting them pass silently.
 
 **Related:** [[phase1b-two-environments]] · [[pytorch-rng-and-state]]
+
+---
+
+# Phase 1C — Version Alignment and Storage Wiring
+
+## 15. `paths.configure_hf_cache()` — new
+
+**Why it exists.** `configs/env/server.yaml` declared `cache_root`, but the
+Hugging Face libraries read *environment variables*, not our config. Nothing
+bridged the two: `manifest.py` only **recorded** `HF_HOME`; nothing **set** it.
+The first Phase 3 download would therefore have gone to `~/.cache/huggingface`
+— on the server, a directory already holding **5.3 GB of other projects'
+models** on a volume with 77 GB free.
+
+**What it sets, and what it deliberately does not:**
+
+| Variable | Set? | Reason |
+|---|---|---|
+| `HF_HUB_CACHE` | ✅ `<cache_root>/hub` | where model blobs land |
+| `HF_DATASETS_CACHE` | ✅ `<cache_root>/datasets` | where dataset arrow files land |
+| `HF_HOME` | ❌ **never** | it also governs the stored-credentials file; relocating it would break an existing `huggingface-cli login` |
+
+**Precedence:** an already-set variable is respected, never overwritten — an
+operator who exported `HF_HUB_CACHE` deliberately outranks our config.
+
+**Call site:** `train.train()`, immediately after the run directory is resolved
+and **before** anything could trigger a download.
+
+**Tests (4):** variables set correctly; `HF_HOME` untouched; existing value
+respected; falls back to `cache_root` when no explicit root is given.
+
+## 16. Manifest allowlist gap — found and fixed
+
+The first wiring test passed, but inspecting a real `run_manifest.json` showed
+`HF_HUB_CACHE: null` while `HF_DATASETS_CACHE` was recorded. The allowlist in
+`manifest.relevant_env_vars()` listed `HF_HOME`, `HF_DATASETS_CACHE` and
+`TRANSFORMERS_CACHE` — but **not the one variable AlignLab actually sets**.
+
+A run could therefore have relocated its model cache with the manifest showing
+nothing. `HF_HUB_CACHE` was added, with a regression test.
+
+*Worth noting how it was found:* not by a failing test, but by reading the
+output of a real run. The wiring test only asserted the environment; it did not
+assert the manifest recorded it.
+
+## 17. torch version alignment
+
+`torch` in the local venv was downgraded **2.13.0+cpu → 2.6.0+cpu** so both
+machines run the same minor version, differing only in build variant:
+
+```
+local  : torch 2.6.0+cpu     Python 3.11.15  Windows
+server : torch 2.6.0+cu124   Python 3.11.16  Linux, 2 x RTX A6000
+```
+
+The server pins the version because it is the primary training environment and
+the cu124 index caps at 2.6.0.
+
+**Lockfile divergence after alignment** — now essentially only the intended one:
+
+| Package | Local | Server |
+|---|---|---|
+| `torch` | 2.6.0+cpu | 2.6.0+cu124 |
+| `filelock` | 3.32.4 | 3.32.3 |
+| `colorama` | present | absent (Windows-only dep) |
+| `setuptools` | present | absent |
+| 14 × `nvidia-*`/`triton`/`cusparselt` | absent | present |
+
+**What alignment bought, measured.** Not bitwise agreement. Re-running the
+cross-machine CPU comparison after alignment still shows ~1e-7 divergence — 2 of
+6 logged steps matched exactly, up from 1 of 6. Separately, local torch 2.6.0
+produced *different* values from local torch 2.13.0 **on the same machine**, so
+the version genuinely does affect arithmetic.
+
+Conclusion: the residual divergence is **platform/BLAS-level** (Windows vs
+Linux), not version-level. Alignment's real value is removing API and default
+drift between two torch majors — which is what actually threatened the Tier B
+structural guarantee. Tier C still governs cross-machine numerics.
+
+**Related:** [[storage-policy]] · [[phase1b-two-environments]]

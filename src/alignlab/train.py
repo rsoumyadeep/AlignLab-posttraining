@@ -36,7 +36,12 @@ from alignlab.device import describe_hardware, resolve_device
 from alignlab.evaluation import EvalResult, run_evaluation
 from alignlab.logging_utils import get_logger, setup_logging
 from alignlab.manifest import capture_environment
-from alignlab.paths import checkpoint_root, generate_run_name, run_dir
+from alignlab.paths import (
+    checkpoint_root,
+    configure_hf_cache,
+    generate_run_name,
+    run_dir,
+)
 from alignlab.preemption import PreemptionHandler
 from alignlab.seeding import set_seed
 from alignlab.tracking import build_tracker, write_metrics_jsonl
@@ -127,6 +132,16 @@ def train(cfg: DictConfig) -> dict[str, Any]:
     logger.info("AlignLab Phase 1 foundation smoke run: %s", run_name)
     logger.info("Run directory: %s", directory)
     logger.info("=" * 70)
+
+    # -- storage policy ----------------------------------------------------
+    # Must happen before anything could trigger a Hugging Face download.
+    # Declaring cache_root in the config does nothing on its own; the HF
+    # libraries read environment variables.
+    hf_env = configure_hf_cache(cfg.env.cache_root or None)
+    if hf_env:
+        logger.info("Hugging Face cache directed to: %s", hf_env["HF_HUB_CACHE"])
+    else:
+        logger.info("Hugging Face cache left as already configured in the environment")
 
     # -- reproducibility ---------------------------------------------------
     seed_report = set_seed(

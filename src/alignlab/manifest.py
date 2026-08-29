@@ -136,6 +136,10 @@ def relevant_env_vars() -> dict[str, str | None]:
         "ALIGNLAB_CACHE_ROOT",
         "ALIGNLAB_RUN_NAME",
         "HF_HOME",
+        # HF_HUB_CACHE is the variable AlignLab actually sets (see
+        # paths.configure_hf_cache); omitting it would leave the manifest
+        # unable to say where a downloaded model came from.
+        "HF_HUB_CACHE",
         "HF_DATASETS_CACHE",
         "TRANSFORMERS_CACHE",
         "WANDB_MODE",

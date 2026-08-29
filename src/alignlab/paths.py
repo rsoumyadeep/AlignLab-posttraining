@@ -99,6 +99,52 @@ def run_dir(run_name: str, create: bool = True) -> Path:
     return path
 
 
+def configure_hf_cache(root: str | Path | None = None) -> dict[str, str]:
+    """Point Hugging Face downloads at the AlignLab cache root.
+
+    Declaring ``cache_root`` in a config achieves nothing on its own - the
+    Hugging Face libraries read environment variables, not our config. Without
+    this call a model download silently lands in ``~/.cache/huggingface``.
+
+    That is not hypothetical. On the department server that default directory
+    already holds 5.3 GB belonging to other projects, on a volume with under
+    80 GB free, so an unconfigured download would both hide AlignLab's disk
+    usage inside someone else's cache and consume space nobody attributed to
+    us.
+
+    Which variables are set, and why only these two:
+
+        HF_HUB_CACHE       where model/tokenizer blobs are stored
+        HF_DATASETS_CACHE  where dataset arrow files are stored
+
+    ``HF_HOME`` is deliberately NOT set. It is the base directory for hub
+    cache *and* stored credentials; moving it would relocate the token file
+    too, so an existing login would stop resolving. Setting only the two cache
+    variables moves the large files while leaving authentication exactly where
+    the user configured it.
+
+    An already-set variable is respected rather than overwritten: an operator
+    who exported HF_HUB_CACHE deliberately outranks our config.
+
+    Returns:
+        The variables this call actually set (empty if all were already set).
+    """
+    base = Path(root).expanduser().resolve() if root else cache_root()
+
+    wanted = {
+        "HF_HUB_CACHE": str(base / "hub"),
+        "HF_DATASETS_CACHE": str(base / "datasets"),
+    }
+
+    applied: dict[str, str] = {}
+    for name, value in wanted.items():
+        if os.environ.get(name):
+            continue
+        os.environ[name] = value
+        applied[name] = value
+    return applied
+
+
 def describe_roots() -> dict[str, str]:
     """Return all resolved roots as strings, for logging and manifests.
 

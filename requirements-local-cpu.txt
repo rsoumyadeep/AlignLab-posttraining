@@ -1,25 +1,42 @@
 # =============================================================================
 # AlignLab - LOCAL environment lockfile (Windows development machine)
 #
-# GENERATED, NOT HAND-WRITTEN. Produced by 'uv pip freeze' from the venv that
-# actually ran the Phase 1A test suite on 2026-08-29. Regenerate with:
+# GENERATED, NOT HAND-WRITTEN. Produced by uv pip freeze from the project venv.
+# Regenerate with:
 #
 #   uv pip freeze --python .venv/Scripts/python.exe
 #
-# Python: 3.11.15  |  torch: 2.13.0+cpu (CPU-ONLY BUILD)
+# Generated : 2026-08-29 (Phase 1C)
+# Python    : 3.11.15
+# torch     : 2.6.0+cpu
 #
-# This machine has a GTX 1050 (4 GB, compute capability 6.1) that the installed
-# torch build cannot use, and which is too small to train Qwen2.5-1.5B in any
-# case. That is intentional: this is the development environment, not the
-# training environment.
+# ---------------------------------------------------------------------------
+# PHASE 1C - VERSION ALIGNED WITH THE SERVER
 #
-# The SERVER lockfile is a separate file and DOES NOT YET EXIST. It must be
-# generated on the server itself, after the server has been probed. It should
-# differ from this file ONLY in the torch build variant (a CUDA build rather
-# than +cpu); any other divergence must be deliberate and documented.
+# torch was DOWNGRADED from 2.13.0+cpu to 2.6.0+cpu so that both machines run
+# the same torch MINOR VERSION, differing only in build variant:
 #
-# Phase 1 does NOT install transformers, datasets, peft, trl, accelerate or
-# bitsandbytes. Those are the 'train' and 'quant' extras and arrive in Phase 3+.
+#   local  : torch 2.6.0+cpu      Python 3.11.15  Windows
+#   server : torch 2.6.0+cu124    Python 3.11.16  Linux, 2 x RTX A6000
+#
+# WHY 2.6.0 and not something newer: the PyTorch cu124 index caps at 2.6.0
+# (verified - a resolve for torch>2.6 on that index fails). The SERVER is the
+# primary training environment, so the server pins the version and the local
+# machine follows.
+#
+# WHAT THIS ALIGNMENT DOES BUY: identical library behaviour, defaults and APIs
+# across the two machines. That protects the Tier B structural guarantee - a
+# behavioural change between torch 2.6 and 2.13 could otherwise have altered a
+# default and masqueraded as harmless numerical noise.
+#
+# WHAT IT DOES NOT BUY: bitwise agreement. MEASURED after alignment, same
+# commit/seed/config with device=cpu on both machines, the losses still differ
+# by ~1e-7 relative (2 of 6 logged steps matched exactly, up from 1 of 6).
+# The residual divergence is platform/BLAS-level (Windows vs Linux), not
+# version-level. Tier C therefore still applies across machines.
+#
+# NOT INSTALLED (deliberate, Phase 3+ scope): transformers, datasets, peft,
+# trl, accelerate, bitsandbytes.
 # =============================================================================
 
 annotated-types==0.8.0
@@ -57,8 +74,8 @@ requests==2.34.2
 rich==15.0.0
 sentry-sdk==2.68.1
 setuptools==84.0.0
-sympy==1.14.0
-torch==2.13.0
+sympy==1.13.1
+torch==2.6.0+cpu
 typing-extensions==4.16.0
 typing-inspection==0.4.4
 urllib3==2.7.0
