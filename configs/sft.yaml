@@ -13,6 +13,7 @@ defaults:
   - model: qwen2_5_1_5b
   - data: no_robots
   - sft: default
+  - peft: none
   - logging: default
   - tracking: noop
   # AlignLab installs its own handlers; Hydra's would add a second log file.

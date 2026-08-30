@@ -1,0 +1,29 @@
+# QLoRA: frozen 4-bit NF4 base + trainable low-rank adapters.
+#
+# The ONLY difference from lora.yaml is how the FROZEN BASE is stored. The
+# adapters are identical, and the arithmetic is identical - the forward pass
+# dequantizes to compute_dtype before every matmul. QLoRA is not "LoRA in
+# 4-bit arithmetic"; it is LoRA over a 4-bit-STORED base.
+
+method: qlora
+
+r: 16
+alpha: 32.0
+dropout: 0.05
+target_modules: [q_proj, k_proj, v_proj, o_proj]
+bias: none
+
+# NF4, not FP4. E15 MEASURED NF4 at 24.6% lower relative error than FP4 on
+# normally-distributed data (rel 0.0912 vs 0.1210). NF4's quantization levels
+# sit at the quantiles of a normal distribution, which is approximately how
+# neural network weights are distributed.
+quant_type: nf4
+
+# Double quantization quantizes the per-block absmax constants too, saving
+# roughly 0.4 bits per parameter. Its cost is a small extra dequantization step.
+double_quant: true
+
+# Storage is 4-bit; COMPUTE is bfloat16. Verified in E15: a Linear4bit forward
+# agreed with a bf16 nn.Linear to 9.1% relative error, which is quantization
+# error in the weights, not reduced-precision arithmetic.
+compute_dtype: bfloat16

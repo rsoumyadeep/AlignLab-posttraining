@@ -1,0 +1,3 @@
+# Full-parameter fine-tuning - the Phase 3 baseline, and the reference arm of
+# the Phase 4 comparison. Every parameter is trainable.
+method: none

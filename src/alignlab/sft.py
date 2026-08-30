@@ -60,6 +60,12 @@ from alignlab.masking import (
     describe_mask,
     expected_labels,
 )
+from alignlab.peft_setup import (
+    build_peft_config,
+    build_quantization_config,
+    describe_peft,
+    summarise_trainable,
+)
 from alignlab.paths import (
     checkpoint_root,
     configure_hf_cache,
@@ -318,13 +324,25 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
     # the real figure is recorded afterwards.
     if cfg.storage_guard:
         logger.info("Disk before: %s", disk_status(ckpt_dir.parent))
+        # The arm changes the checkpoint size by two orders of magnitude, so
+        # guarding all three with the full-fine-tune figure would refuse LoRA
+        # runs that comfortably fit. Estimated from the ADAPTER count for
+        # lora/qlora - the frozen base is not written to the checkpoint.
+        if cfg.peft.method == "none":
+            guard_params = 1_543_714_304
+            guard_label = f"{cfg.model.id} full-parameter SFT"
+        else:
+            # r * (d_in + d_out) summed over the 112 matched attention
+            # matrices; measured exactly by E16 and re-derived at runtime below.
+            guard_params = cfg.peft.r * 112 * (1536 + 1536)
+            guard_label = f"{cfg.model.id} {cfg.peft.method} r={cfg.peft.r} adapters"
         require_free_space_for_checkpoints(
             ckpt_dir.parent,
-            n_params=1_543_714_304,
+            n_params=guard_params,
             keep_last=cfg.sft.save_total_limit,
             param_dtype="bfloat16",
             optimizer="adamw",
-            label=f"{cfg.model.id} full-parameter SFT",
+            label=guard_label,
             allow_override=cfg.allow_low_disk,
         )
     else:
@@ -348,12 +366,20 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model.id, revision=cfg.model.revision
     )
-    model = AutoModelForCausalLM.from_pretrained(
-        cfg.model.id,
+    quantization_config = build_quantization_config(cfg)
+    load_kwargs = dict(
         revision=cfg.model.revision,
         dtype=dtype,
         attn_implementation=cfg.model.attn_implementation,
     )
+    if quantization_config is not None:
+        load_kwargs["quantization_config"] = quantization_config
+        # device_map is required so bitsandbytes places and quantizes the
+        # weights on the GPU as they load, rather than materialising bf16 on
+        # CPU first and defeating the memory saving.
+        load_kwargs["device_map"] = {"": 0}
+
+    model = AutoModelForCausalLM.from_pretrained(cfg.model.id, **load_kwargs)
     n_params = sum(p.numel() for p in model.parameters())
     n_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(
@@ -427,13 +453,34 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
         report_to=[],  # AlignLab owns tracking; see alignlab.tracking
     )
 
+    peft_config = build_peft_config(cfg)
     trainer = SFTTrainer(
         model=model,
         args=sft_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
         processing_class=tokenizer,
+        peft_config=peft_config,
     )
+
+    # Counts AFTER peft wrapping - before it, every parameter still looks
+    # trainable and the number would be the full-fine-tune one.
+    peft_counts = summarise_trainable(trainer.model)
+    peft_record = describe_peft(cfg)
+    logger.info("PEFT arm: %s", peft_record)
+    logger.info(
+        "trainable %s of %s logical parameters (%.4f%%)",
+        f"{peft_counts['trainable']:,}",
+        f"{peft_counts['logical_total']:,}",
+        100 * peft_counts["trainable_fraction_of_logical"],
+    )
+    if cfg.peft.method != "none" and peft_counts["trainable"] >= n_params * 0.5:
+        raise RuntimeError(
+            f"peft.method={cfg.peft.method!r} but "
+            f"{peft_counts['trainable']:,} parameters are trainable - the "
+            f"adapter wrapping did not take effect. Refusing to run a "
+            f"'PEFT' arm that is secretly a full fine-tune."
+        )
     logger.info("TRL resolved completion_only_loss -> %s", trainer.completion_only_loss)
 
     # ------------------------------------------- verify BEFORE the first step
@@ -481,6 +528,8 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
             "prefix_consistency": prefix_audit,
             "truncation_audit": truncation,
             "completion_only_loss": bool(trainer.completion_only_loss),
+            "peft": peft_record,
+            "peft_counts": peft_counts,
             "estimated_checkpoint_bytes": estimate_checkpoint_bytes(n_params),
             "deferred": "USER explain-back checkpoints - see docs/phase3",
         },
@@ -510,7 +559,19 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
             logger.info("Resuming from %s", resume_from)
 
     logger.info("Starting training")
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats()
     result = trainer.train(resume_from_checkpoint=resume_from)
+    peak_vram_bytes = (
+        int(torch.cuda.max_memory_allocated()) if device.type == "cuda" else 0
+    )
+    peak_vram_reserved = (
+        int(torch.cuda.max_memory_reserved()) if device.type == "cuda" else 0
+    )
+    logger.info(
+        "peak VRAM: %.2f GiB allocated, %.2f GiB reserved",
+        peak_vram_bytes / GIB, peak_vram_reserved / GIB,
+    )
 
     metrics = dict(result.metrics)
     logger.info("Training finished: %s", metrics)
@@ -543,6 +604,10 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
         "model_revision": cfg.model.revision,
         "parameters": n_params,
         "trainable_parameters": n_trainable,
+        "peft": peft_record,
+        "peft_counts": peft_counts,
+        "peak_vram_allocated_bytes": peak_vram_bytes,
+        "peak_vram_reserved_bytes": peak_vram_reserved,
         "dataset": data_info,
         "train_metrics": metrics,
         "eval_metrics": eval_metrics,

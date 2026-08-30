@@ -172,3 +172,70 @@ class TestSFTConfigComposition:
 
         with pytest.raises((ConfigCompositionException, Exception)):
             self._compose(["sft.learing_rate=1e-6"])
+
+
+class TestPeftConfigComposition:
+    """The Phase 4 arms must differ in exactly what we intend."""
+
+    @staticmethod
+    def _compose(overrides=None):
+        from hydra import compose, initialize_config_dir
+        from alignlab.config_schema import register_configs
+        from alignlab.sft import CONFIG_DIR
+
+        register_configs()
+        with initialize_config_dir(config_dir=CONFIG_DIR, version_base=None):
+            return compose(config_name="sft", overrides=overrides or [])
+
+    def test_default_arm_is_full_finetune(self):
+        assert self._compose().peft.method == "none"
+
+    def test_lora_arm_composes(self):
+        cfg = self._compose(["peft=lora"])
+        assert cfg.peft.method == "lora"
+        assert cfg.peft.r == 16
+        assert cfg.peft.alpha == 32.0
+
+    def test_qlora_arm_composes_with_nf4(self):
+        cfg = self._compose(["peft=qlora"])
+        assert cfg.peft.method == "qlora"
+        assert cfg.peft.quant_type == "nf4"
+        assert cfg.peft.double_quant is True
+        assert cfg.peft.compute_dtype == "bfloat16"
+
+    def test_lora_and_qlora_share_every_adapter_setting(self):
+        """The arms must differ ONLY in how the frozen base is stored."""
+        lora = self._compose(["peft=lora"]).peft
+        qlora = self._compose(["peft=qlora"]).peft
+        for field in ("r", "alpha", "dropout", "bias"):
+            assert getattr(lora, field) == getattr(qlora, field), field
+        assert list(lora.target_modules) == list(qlora.target_modules)
+
+    def test_alpha_is_twice_r_so_scaling_is_two(self):
+        cfg = self._compose(["peft=lora"])
+        assert cfg.peft.alpha / cfg.peft.r == 2.0
+
+    def test_targets_exclude_lm_head(self):
+        """lm_head is TIED to the embedding; adapting it would adapt both."""
+        cfg = self._compose(["peft=lora"])
+        assert "lm_head" not in list(cfg.peft.target_modules)
+
+    def test_rank_override_reaches_the_config(self):
+        assert self._compose(["peft=lora", "peft.r=64"]).peft.r == 64
+
+    def test_invalid_method_is_rejected(self):
+        from alignlab.config_schema import PeftConfigGroup
+
+        with pytest.raises(ValueError, match="none|lora|qlora"):
+            PeftConfigGroup(method="adapters")
+
+    def test_nonpositive_rank_rejected_for_peft_methods(self):
+        from alignlab.config_schema import PeftConfigGroup
+
+        with pytest.raises(ValueError, match="rank must be positive"):
+            PeftConfigGroup(method="lora", r=0)
+
+    def test_scaling_property(self):
+        from alignlab.config_schema import PeftConfigGroup
+
+        assert PeftConfigGroup(method="lora", r=8, alpha=16).scaling == 2.0

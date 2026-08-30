@@ -1,0 +1,28 @@
+# LoRA: frozen bf16 base + trainable low-rank adapters.
+#
+#   W' x = W x + (alpha / r) * B A x        A: r x d_in,  B: d_out x r
+#
+# The base weights are frozen and used at full precision; only A and B train.
+
+method: lora
+
+# r=16 is a STARTING POINT, not a value derived from the SVD analysis.
+# E17 measured the real dW from Phase 3's full fine-tune and found it needs
+# rank ~730 of 1536 for 90% of its energy - r=16 captures 10.69%. That does NOT
+# mean r=16 is wrong: LoRA needs a low-rank update to SUFFICE, not full
+# fine-tuning's update to BE low-rank. Rank is a hyperparameter to sweep, and
+# E17 records why the SVD cannot choose it for you.
+r: 16
+
+# alpha = 2r, so scaling = alpha/r = 2 regardless of rank. This is what makes
+# a rank sweep not also a learning-rate sweep.
+alpha: 32.0
+
+dropout: 0.05
+
+# VERIFIED against the loaded module tree (E16): 112 of the model's 197
+# nn.Linear modules match these four names. lm_head is deliberately excluded -
+# it is TIED to the input embedding, so adapting it would adapt the embedding.
+target_modules: [q_proj, k_proj, v_proj, o_proj]
+
+bias: none

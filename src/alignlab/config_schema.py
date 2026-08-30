@@ -188,6 +188,55 @@ class SFTHyperParams:
 
 
 @dataclass
+class PeftConfigGroup:
+    """Parameter-efficient fine-tuning settings.
+
+    ``method`` selects the arm of the Phase 4 comparison:
+
+        none   full-parameter fine-tuning (the Phase 3 baseline)
+        lora   frozen bf16 base + trainable low-rank adapters
+        qlora  frozen 4-bit NF4 base + trainable low-rank adapters
+
+    The three share every other setting so the comparison is controlled.
+    """
+
+    method: str = "none"  # none | lora | qlora
+
+    # --- LoRA ---
+    r: int = 16
+    alpha: float = 32.0
+    dropout: float = 0.05
+    # VERIFIED against the loaded Qwen2.5-1.5B module tree by
+    # scripts/experiments/e16_lora_targets.py - 197 nn.Linear modules, of which
+    # these four names account for 112. NOT copied from a paper.
+    target_modules: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
+    bias: str = "none"
+
+    # --- QLoRA (4-bit base) ---
+    # nf4 rather than fp4: E15 measured NF4 at 24.6% lower relative error than
+    # FP4 on normally-distributed data, which is what weights approximately are.
+    quant_type: str = "nf4"
+    # Double quantization also quantizes the per-block absmax constants,
+    # saving roughly 0.4 bits per parameter.
+    double_quant: bool = True
+    # The dtype the dequantized weights are computed in. Storage is 4-bit;
+    # the matmul is NOT.
+    compute_dtype: str = "bfloat16"
+
+    def __post_init__(self) -> None:
+        if self.method not in ("none", "lora", "qlora"):
+            raise ValueError(
+                f"peft.method must be none|lora|qlora, got {self.method!r}"
+            )
+        if self.method != "none" and self.r <= 0:
+            raise ValueError(f"LoRA rank must be positive, got {self.r}")
+
+    @property
+    def scaling(self) -> float:
+        return self.alpha / self.r if self.r else 0.0
+
+
+@dataclass
 class AlignLabConfig:
     """Top-level configuration."""
 
@@ -220,6 +269,7 @@ class SFTExperimentConfig:
     model: ModelConfig = field(default_factory=ModelConfig)
     data: DataConfig = field(default_factory=DataConfig)
     sft: SFTHyperParams = field(default_factory=SFTHyperParams)
+    peft: PeftConfigGroup = field(default_factory=PeftConfigGroup)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     tracking: TrackingConfig = field(default_factory=TrackingConfig)
     reproducibility: ReproducibilityConfig = field(
