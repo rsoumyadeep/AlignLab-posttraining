@@ -50,7 +50,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 from alignlab.config_schema import register_configs
-from alignlab.data import fingerprint_dataset, load_instruction_dataset
+from alignlab.data import load_instruction_dataset
 from alignlab.device import describe_hardware, resolve_device
 from alignlab.logging_utils import get_logger, setup_logging
 from alignlab.manifest import capture_environment
