@@ -325,9 +325,11 @@ def main() -> int:
 
   The naive procedure - "SVD the update, read off the rank at 90% energy" -
   returns ~730 here. Nobody uses rank 730: at that rank a LoRA adapter costs
-  730 * (1536 + 1536) = 2,240,160 parameters against the dense update's
-  2,359,296. It would save 5% of the parameters. The procedure, applied
-  honestly to a real dW, recommends something absurd.
+  730 * (1536 + 1536) = 2,242,560 parameters against the dense update's
+  1536 * 1536 = 2,359,296. It saves 4.9%. The break-even rank for a square
+  1536x1536 matrix is 768 - above that a 'low-rank' factorisation costs MORE
+  than the dense update it approximates, and 730 is just under it. The
+  procedure, applied honestly to a real dW, recommends something absurd.
 
   So the first thing the spectrum tells you is that the naive reading is wrong.
 
