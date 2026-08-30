@@ -38,6 +38,50 @@ HYPOTHESES, recorded before running:
     H4  dW is much smaller in norm than W_base - fine-tuning perturbs rather
         than rewrites
 
+OUTCOMES, recorded after the first run. The hypotheses above are preserved
+exactly as written beforehand.
+
+    H1  HOLDS, but only weakly. dW does concentrate faster than noise - yet
+        the margin is small: on layer 13 q_proj, 90% of dW's energy needs rank
+        730 against the noise control's 783. A 7% difference, not an order of
+        magnitude.
+
+    H2  **DISPROVED, and this is the most important result in E17.** r=64
+        captures 22.95% of q_proj's energy, not the >=50% predicted. Reaching
+        90% needs rank ~730 of a maximum 1536 - roughly HALF of full rank. At
+        the rank people actually use, r=16, the truncated SVD reconstructs
+        just 10.69% of the update's energy, with relative reconstruction error
+        0.945.
+
+    H3  HOLDS. Square attention projections concentrate relatively better
+        (r@90% / max_rank ~ 0.41-0.48) than the narrow GQA KV projections
+        (~0.65-0.77) or the MLP matrices (~0.77-0.78).
+
+    H4  HOLDS strongly, and more so than expected: every ||dW|| / ||W|| is
+        between 0.0013 and 0.0050. One epoch of SFT moves the weights by
+        roughly a quarter of one percent.
+
+WHAT H2's FAILURE ACTUALLY MEANS - the central lesson of this experiment.
+
+It is tempting to read "dW is not low-rank" as "LoRA should not work". That
+inference is wrong, and seeing why is the whole point.
+
+    LoRA's premise is NOT "the dW that full fine-tuning produces is low-rank".
+    It is "there EXISTS a low-rank dW achieving comparable task performance".
+
+Those are different claims, and only the second is what LoRA needs. Full
+fine-tuning's update is nearly full-rank because nothing in gradient descent
+pushes it toward low rank - every direction that reduces the loss even
+slightly gets some update, so the solution spreads across the whole spectrum.
+Its rank is an artefact of the optimisation being unconstrained, not a
+measurement of how much rank the task requires.
+
+So the naive procedure - "SVD the update, read off the rank" - is not merely
+imprecise. Applied to a real dW it gives ~730, which nobody uses, and which
+would cost more parameters than the dense update it approximates. The
+measurement below is evidence that the procedure is WRONG, and that is more
+useful than a tidy confirmation would have been.
+
 WHAT THIS EXPERIMENT CANNOT SHOW, stated before the results so it cannot look
 like an excuse afterwards:
 
@@ -277,61 +321,87 @@ def main() -> int:
     print("HOW TO CHOOSE A RANK - and why this is a HEURISTIC")
     print("=" * 78)
     print("""
-  THE PROCEDURE the numbers above support:
-    1. If a full fine-tune for a similar task exists, take dW = W_ft - W_base,
-       compute its singular values, and read off the rank at your energy
-       target. Compare against a same-norm random control - without that
-       comparison "the spectrum decays" is not evidence.
-    2. If no such fine-tune exists - the usual case - you cannot do step 1 at
-       all. Start from a rank the literature reports for a similar
-       model/task/data scale, and sweep.
-    3. Budget-first is legitimate: pick the largest r your memory allows, since
-       LoRA's cost is linear in r and typically a fraction of a percent.
+  START FROM WHAT WAS MEASURED, NOT FROM THE STORY.
 
-  WHY IT IS A HEURISTIC AND NOT A RULE:
+  The naive procedure - "SVD the update, read off the rank at 90% energy" -
+  returns ~730 here. Nobody uses rank 730: at that rank a LoRA adapter costs
+  730 * (1536 + 1536) = 2,240,160 parameters against the dense update's
+  2,359,296. It would save 5% of the parameters. The procedure, applied
+  honestly to a real dW, recommends something absurd.
 
-    a) IT MEASURES THE WRONG THING, STRICTLY SPEAKING. The spectrum of the dW
-       that full fine-tuning FOUND is not the minimum rank needed to reach
-       comparable quality. Gradient descent had no incentive to be low-rank, so
-       its solution is an upper bound on the necessary rank, not an estimate.
+  So the first thing the spectrum tells you is that the naive reading is wrong.
 
+  WHY IT IS WRONG. LoRA does not require that full fine-tuning's dW be
+  low-rank. It requires that SOME low-rank dW does the job. Full fine-tuning's
+  update is nearly full-rank because unconstrained gradient descent has no
+  reason to be anything else - every loss-reducing direction gets some update.
+  Rank ~730 measures how unconstrained the optimiser was, not how much rank
+  the task needs.
+
+  WHAT THE SPECTRUM IS STILL GOOD FOR:
+
+    1. AS A CONTROLLED COMPARISON. dW concentrating faster than a same-norm
+       random matrix (730 vs 783 at 90%) is real evidence of structure, even
+       though the margin is modest. Without the control you would not know
+       whether ANY decay was meaningful.
+    2. AS A RELATIVE RANKING ACROSS MODULES. Square attention projections
+       concentrate relatively better than MLP matrices here, which is a
+       reason to prefer attention targets when the budget is tight - and it
+       matches what the LoRA paper chose to adapt.
+    3. AS A SANITY CHECK. A dW whose spectrum looked exactly like noise would
+       be a warning that the fine-tune learned nothing structured.
+
+  WHAT ACTUALLY DETERMINES THE RANK YOU SHOULD USE:
+
+    a) A SWEEP AGAINST A VALIDATION METRIC. This is the honest answer. Rank is
+       a hyperparameter; treat it as one. Cost is linear in r and tiny
+       (r=16 attention-only is 0.28% of this model), so the sweep is cheap.
+    b) THE TARGET MODULE SET, which matters more than r in the QLoRA authors'
+       reported experience. Adapting all linear layers at low rank often beats
+       adapting attention only at high rank, for the same budget.
+    c) DATA SCALE AND TASK DISTANCE. A rank sufficient for 10k in-domain
+       instruction pairs need not suffice for a domain shift.
+    d) YOUR MEMORY BUDGET, which is a legitimate first constraint given (a).
+
+  WHY THE SVD READING IS A HEURISTIC AND NOT A RULE:
+
+    a) IT MEASURES A SOLUTION, NOT A REQUIREMENT - the point above.
     b) ENERGY IS NOT USEFULNESS. Explained Frobenius energy is geometry. A
-       direction with a tiny singular value may carry the task-critical signal,
-       and a dominant one may be an artefact of the optimiser or of a few
-       outlier rows.
-
-    c) IT IS POST-HOC. Step 1 requires the very full fine-tune LoRA exists to
-       avoid. Circular for the case you actually care about.
-
-    d) IT IS PER-MATRIX, AND THE MATRICES DISAGREE. The table above shows
-       different modules needing different ranks. A single global r is already
-       a compromise; the SVD does not tell you how to make it.
-
-    e) TASK AND DATA SCALE DOMINATE. Rank interacts with dataset size and task
-       difficulty. A rank sufficient for 10k instruction pairs may not be
-       sufficient for a domain shift.
-
-    f) THE MEASUREMENT ITSELF IS NOISY HERE. dW is a difference of bf16
+       direction with a tiny singular value may carry the task-critical
+       signal; a dominant one may be an optimiser artefact or a few outlier
+       rows.
+    c) IT IS POST-HOC AND CIRCULAR. It needs the very full fine-tune that
+       LoRA exists to avoid.
+    d) THE MATRICES DISAGREE. Different modules want different ranks; a single
+       global r is already a compromise the SVD cannot resolve.
+    e) THE MEASUREMENT IS PRECISION-LIMITED. dW is a difference of bf16
        tensors, so its small singular values sit near the precision floor. The
-       SVD is computed in float64 to keep round-off from dominating the tail,
-       but the INPUT precision is still bf16 and that limits what the tail can
-       mean.
+       SVD runs in float64 to keep round-off out of the tail, but the INPUT is
+       bf16 and that bounds what the tail can mean.
 
-  THE ANSWER TO GIVE IN AN INTERVIEW is therefore not "use SVD". It is:
-  "SVD of an observed update tells you the rank of a solution that exists,
-   which bounds rather than determines the rank you need; in practice I would
-   sweep rank against a fixed budget and validation metric, use the spectrum
-   as a prior and a sanity check, and expect the answer to depend on the
-   target modules and the data scale more than on the model."
+  THE ANSWER TO GIVE IN AN INTERVIEW:
+
+  "I would not choose it from an SVD. I measured this: on a real full
+   fine-tune of Qwen2.5-1.5B, dW needs rank ~730 of 1536 for 90% of its
+   energy, and r=16 captures under 11%. Yet r=16 adapters work. That tells you
+   LoRA's premise is not 'the full-FT update is low-rank' - it is 'a low-rank
+   update suffices', which is a different and weaker claim. So I treat rank as
+   a hyperparameter and sweep it against validation loss under a fixed budget,
+   spend my first extra parameters on WIDENING the target module set rather
+   than raising r, and use the spectrum only as a sanity check and a relative
+   ranking across module types."
 """)
 
     print("--- WHAT THIS PROVES / DOES NOT PROVE ---")
-    print("  PROVES     : a real fine-tuning update on this model concentrates")
-    print("               its energy in far fewer directions than same-norm")
-    print("               noise, which is evidence FOR the low-rank premise.")
-    print("  DOES NOT   : establish that any particular rank trains as well as")
-    print("               full fine-tuning. No adapter was trained in E17.")
-    print("               That comparison is E18/E19.")
+    print("  PROVES     : a real fine-tuning update on this model is only")
+    print("               MODESTLY more concentrated than same-norm noise, and")
+    print("               is nowhere near low-rank: ~730 of 1536 for 90% energy.")
+    print("               The naive 'SVD the update and read off r' procedure")
+    print("               therefore recommends a rank nobody would use.")
+    print("  DOES NOT   : show that LoRA fails. LoRA needs a low-rank update to")
+    print("               SUFFICE, not full fine-tuning's update to BE low-rank.")
+    print("               Whether r=16 trains competitively is E18/E19, where an")
+    print("               adapter is actually trained. No adapter was trained here.")
 
     payload = {
         "base_model": BASE_MODEL,
