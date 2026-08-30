@@ -44,6 +44,39 @@ MLP or an untied output head. That is the experiment that would CONFIRM H3, it
 costs another ~18-minute run per variant, and it is recorded as the obvious
 next step rather than quietly skipped.
 
+OUTCOMES, recorded after running. Measured at the position where <|im_end|>
+should be emitted, over 100 held-out examples:
+
+    model          P(<|im_end|>)   median rank   argmax
+    base                 0.00000        31,600     0.0%
+    full SFT             0.39513             1    79.0%
+    LoRA  @2e-4          0.00021           160     0.0%
+    LoRA  @2e-5          0.00006         2,217     0.0%
+    QLoRA @2e-4          0.00019           194     0.0%
+
+    H1  DISPROVED. LoRA did NOT learn nothing: it moved the stop token from
+        rank 31,600 to rank 160, and its probability to 74.8x the base's.
+
+    H2  CONFIRMED. It learned something and still lost decisively. Full
+        fine-tuning reached P = 0.395 (140,607x the base) and rank 1, taking
+        the argmax on 79% of examples. LoRA reached P = 0.00021 - about
+        1,880x lower than full SFT - and rank 1 on none.
+
+    H3  STRONGLY SUPPORTED, not proven. Full fine-tuning moved the tied
+        embedding / lm_head matrix by relative 0.0136 (||dW|| 5.44 against
+        ||W|| 399.89). For comparison, E17 measured the ATTENTION updates at
+        relative 0.0013-0.0050. So the output projection received the LARGEST
+        relative change of any matrix measured in this project - roughly 3-10x
+        the attention matrices - and it is precisely the matrix our LoRA target
+        set excludes.
+
+THE LESSON, which is more general than the stop token. LoRA's capability
+ceiling is set by WHICH matrices it can reach, not only by rank. A behaviour
+whose mechanism lives in a matrix outside the target set is not reachable at
+any rank. Here that behaviour was "stop talking", perplexity barely noticed,
+and the target set - chosen for principled reasons (a tied lm_head cannot be
+adapted without also adapting the input embedding) - is what caused it.
+
 Run (server):
     python scripts/experiments/e20_stop_token_gap.py
 """
