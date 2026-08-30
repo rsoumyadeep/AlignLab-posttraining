@@ -179,6 +179,12 @@ def main() -> int:
     parser.add_argument("--eval-examples", type=int, default=200)
     parser.add_argument("--max-length", type=int, default=1024)
     parser.add_argument("--max-new-tokens", type=int, default=256)
+    parser.add_argument(
+        "--include-diagnostic", action="store_true",
+        help="also evaluate the POST-HOC learning-rate diagnostic. It is NOT "
+             "part of the pre-registered sweep and is labelled as such in "
+             "every output row.",
+    )
     parser.add_argument("--out", default="docs/phase6/e23_dpo_evaluation.json")
     args = parser.parse_args()
 
@@ -209,6 +215,15 @@ def main() -> int:
     models = [("SFT (baseline)", ckpt_root / SFT_RUN / "final", None)]
     for beta in BETAS:
         models.append((f"DPO beta={beta}", ckpt_root / f"dpo-beta{beta}-sum" / "final", beta))
+    if args.include_diagnostic:
+        # POST-HOC. Not pre-registered. Run after the sweep's null result to
+        # test whether that null was budget-limited. Labelled in every row so
+        # it cannot be mistaken for a pre-registered arm.
+        models.append((
+            "[POST-HOC] b=0.1 lr5e-6",
+            ckpt_root / "diag-dpo-beta0.1-lr5e-6" / "final",
+            0.1,
+        ))
 
     results = {}
     for label, path, beta in models:
