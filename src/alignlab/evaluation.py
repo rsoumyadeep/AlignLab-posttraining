@@ -17,6 +17,25 @@ returns a plausible-looking constant is worse than no evaluator at all.
 The design constraint that matters: results carry the manifest of the run that
 produced them, so a metric can never drift away from the model, machine and
 commit it describes.
+
+
+NAMING (Phase 8 audit). This module and the ``alignlab.evals`` package have
+confusingly similar names and are NOT the same thing:
+
+    alignlab.evaluation   THIS module. The Phase 1 evaluator PROTOCOL - a
+                          registry of named evaluators, run by train.py, where
+                          a failing evaluator is recorded NOT_TESTED rather
+                          than aborting the run.
+    alignlab.evals        The Phase 7 measurement SUBSYSTEM - perplexity,
+                          preference statistics, generation behaviour, the
+                          two-order judge and the dashboard.
+
+They were deliberately not merged: one is a harness contract, the other is a
+body of metrics, and the Phase 7 subsystem was built ON this skeleton rather
+than replacing it. The names were left alone as well - renaming a module that
+completed Phase 3-6 training code imports would churn working experimental
+paths for a cosmetic gain, which the Phase 8 brief explicitly rules out. The
+ambiguity is documented here and in alignlab/evals/__init__.py instead.
 """
 
 from __future__ import annotations

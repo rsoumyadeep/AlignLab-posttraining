@@ -327,6 +327,13 @@ usual way reproducibility claims become false:
 - **Tier C — statistical.** Any CPU-fp32 vs Ampere-bf16 comparison. ~1e-7
   divergence remains and **cross-machine bitwise agreement is not claimed**.
 
+**Tier B currently holds only in the direction that matters.** The two machines
+run different torch, transformers and Python versions (§19), so a code path
+verified locally is not guaranteed identical on the server. What preserves the
+guarantee for *results* is that every result comes from the server and every run
+manifest records that machine's exact versions — so any run can be reconstructed
+from its own record, which is the claim that was actually needed.
+
 Every run writes a `run_manifest.json` with the git SHA **and dirty flag**,
 config hash, dataset **and** eval fingerprints (sha256 over canonical JSON of
 the actual rows), hardware, library versions, dtype and seed.
@@ -369,9 +376,21 @@ include it in the evaluation — nothing is hard-coded in the entrypoint.
 | | Local (development) | Server (training) |
 |---|---|---|
 | GPU | GTX 1050, 4 GB, Pascal | **NVIDIA RTX A6000, 47.53 GiB, Ampere** |
-| torch | 2.6.0+cpu | 2.6.0+cu124 |
+| torch | 2.12.1+cpu | **2.6.0+cu124** |
+| transformers | 5.8.1 | **5.16.1** |
+| python | 3.13.13 | **3.11.16** |
 | bf16 | no | **yes — verified** |
-| Role | code, docs, full CPU test suite | all real training |
+| Role | code, docs, full CPU test suite | **all real training** |
+
+**The two environments have drifted apart**, and the Phase 8 audit found the
+README still claiming both ran torch 2.6.0. They do not. This weakens **Tier B**
+(structural reproducibility across machines) and is recorded rather than
+papered over.
+
+It does **not** affect any result: every training run and every evaluation in
+this project executed **on the server**, whose versions are pinned in each run's
+manifest. The local machine builds documentation and runs the CPU test suite,
+which passes on both.
 
 **The 4 GB local GPU cannot train this model in any configuration** — bf16
 weights alone are ≈3.1 GB before gradients, optimiser state or activations.

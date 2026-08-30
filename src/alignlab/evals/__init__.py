@@ -7,6 +7,11 @@ that raises is recorded as NOT_TESTED rather than aborting the pass.
 
 Phase 7 adds the concrete metrics, the evaluators, an LLM-as-judge, and a
 comparison layer that refuses to collapse different metrics into one score.
+
+
+NOT to be confused with ``alignlab.evaluation`` (singular), which is the Phase 1
+evaluator protocol that train.py drives. This package is the metrics subsystem.
+See that module's docstring for why both names survive.
 """
 
 from alignlab.evals.metrics import (

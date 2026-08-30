@@ -126,18 +126,19 @@ def sequence_logprobs(logits: torch.Tensor, labels: torch.Tensor) -> SequenceSco
     return SequenceScores(sum_logprob=total, mean_logprob=mean, n_tokens=n_tokens)
 
 
-@torch.no_grad()
-def score_sequences(
-    model, input_ids: torch.Tensor, labels: torch.Tensor
-) -> SequenceScores:
-    """Run a model and score the labelled completion tokens.
-
-    ``no_grad`` because Phase 5 only measures. A training use (Phase 6) needs
-    gradients through the policy and must call the pieces directly.
-    """
-    attention_mask = torch.ones_like(input_ids)
-    logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
-    return sequence_logprobs(logits, labels)
+# REMOVED in Phase 8: score_sequences(model, input_ids, labels).
+#
+# It was written in Phase 5 as a convenience wrapper and never called - the
+# Phase 8 dead-code scan found it was the only unreferenced public symbol in
+# the package. Deleted rather than kept, because it was also a trap: it built
+# ``attention_mask = torch.ones_like(input_ids)``, which is correct only for an
+# unpadded batch. Fed a padded batch it would attend to pad tokens and return
+# quietly wrong log-probabilities - the exact class of silent numerical error
+# this project spent Phases 3-7 building guards against.
+#
+# Callers should compose the pieces explicitly (run the model with the real
+# attention mask, then call sequence_logprobs), which is what dpo_train.py and
+# evals/runners.py already do.
 
 
 def logprob_ratio(
