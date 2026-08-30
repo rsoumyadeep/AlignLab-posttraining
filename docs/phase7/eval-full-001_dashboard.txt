@@ -1,0 +1,112 @@
+============================================================================================================
+ALIGNLAB EVALUATION DASHBOARD
+============================================================================================================
+  created      : 2026-08-30T09:29:15.447122+00:00
+  dataset      : HuggingFaceH4/no_robots
+  eval_fingerprint: b3bc775a6db554cc757152219fc9ffb2f54a016c6dd69635847df970224a7748
+  n_preference_pairs: 200
+  n_generation_prompts: 6
+  judge_model  : Qwen/Qwen2.5-7B-Instruct
+
+------------------------------------------------------------------------------------------------------------
+PER-MODEL METRICS   (no aggregate score - see the note at the end)
+------------------------------------------------------------------------------------------------------------
+  model                     ppl[compl]  ppl[full]   pref SUM  pref MEAN    stop  gen len  distinct2
+  base                           8.824     14.993      45.7%      61.4%     0/6    212.3      0.523
+  SFT                            7.398     12.284      46.7%      58.7%     6/6    117.3      0.839
+  LoRA r=16                      7.665     13.600      46.7%      60.9%     0/6    256.0      0.449
+  QLoRA r=16                     7.733     13.732      46.7%      61.4%     0/6    256.0      0.572
+  DPO b=0.1                      7.398     12.287      46.7%      58.7%     6/6    118.2      0.831
+
+------------------------------------------------------------------------------------------------------------
+LENGTH ATTRIBUTION on the preference set   (Phase 6's decisive check)
+------------------------------------------------------------------------------------------------------------
+  base
+    chosen/token -1.1470  rejected/token -1.1607  gap -30.57  explained by length -34.28  residual +3.71
+  SFT
+    chosen/token -1.0713  rejected/token -1.0803  gap -29.47  explained by length -31.90  residual +2.43
+  LoRA r=16
+    chosen/token -1.1001  rejected/token -1.1098  gap -30.13  explained by length -32.78  residual +2.65
+  QLoRA r=16
+    chosen/token -1.0924  rejected/token -1.1005  gap -30.30  explained by length -32.50  residual +2.20
+  DPO b=0.1
+    chosen/token -1.0712  rejected/token -1.0804  gap -29.43  explained by length -31.91  residual +2.48
+
+------------------------------------------------------------------------------------------------------------
+PAIRWISE COMPARISONS   (Wilson 95% intervals; overlap = not resolvable)
+------------------------------------------------------------------------------------------------------------
+  perplexity[completion]           base -> SFT: 8.8241 -> 7.3984 (-1.4257) 
+      token-weighted over 27127/27127 completion tokens; perplexities are comparable only within a region
+  perplexity[full_sequence]        base -> SFT: 14.9932 -> 12.2839 (-2.7093) 
+      token-weighted over 43527/43527 full_sequence tokens; perplexities are comparable only within a region
+  preference_sum (PRIMARY)         base -> SFT: 0.4565 -> 0.4674 (+0.0109) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  preference_mean (diagnostic)     base -> SFT: 0.6141 -> 0.5870 (-0.0272) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  stop_token_rate                  base -> SFT: 0.0000 -> 1.0000 (+1.0000) RESOLVED
+      intervals do not overlap - the difference exceeds the uncertainty | BEHAVIOURAL metric: Phase 4 found perplexity within 3.5% while this was 0/4 vs 4/4
+  generated_length                 base -> SFT: 212.3333 -> 117.3333 (-95.0000) 
+      reported for every comparison - Phases 5 and 6 both found length driving a number that looked like quality
+  perplexity[completion]           SFT -> LoRA r=16: 7.3984 -> 7.6653 (+0.2669) 
+      token-weighted over 27127/27127 completion tokens; perplexities are comparable only within a region
+  perplexity[full_sequence]        SFT -> LoRA r=16: 12.2839 -> 13.5998 (+1.3158) 
+      token-weighted over 43527/43527 full_sequence tokens; perplexities are comparable only within a region
+  preference_sum (PRIMARY)         SFT -> LoRA r=16: 0.4674 -> 0.4674 (+0.0000) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  preference_mean (diagnostic)     SFT -> LoRA r=16: 0.5870 -> 0.6087 (+0.0217) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  stop_token_rate                  SFT -> LoRA r=16: 1.0000 -> 0.0000 (-1.0000) RESOLVED
+      intervals do not overlap - the difference exceeds the uncertainty | BEHAVIOURAL metric: Phase 4 found perplexity within 3.5% while this was 0/4 vs 4/4
+  generated_length                 SFT -> LoRA r=16: 117.3333 -> 256.0000 (+138.6667) 
+      reported for every comparison - Phases 5 and 6 both found length driving a number that looked like quality
+  perplexity[completion]           SFT -> QLoRA r=16: 7.3984 -> 7.7329 (+0.3345) 
+      token-weighted over 27127/27127 completion tokens; perplexities are comparable only within a region
+  perplexity[full_sequence]        SFT -> QLoRA r=16: 12.2839 -> 13.7323 (+1.4484) 
+      token-weighted over 43527/43527 full_sequence tokens; perplexities are comparable only within a region
+  preference_sum (PRIMARY)         SFT -> QLoRA r=16: 0.4674 -> 0.4674 (+0.0000) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  preference_mean (diagnostic)     SFT -> QLoRA r=16: 0.5870 -> 0.6141 (+0.0272) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  stop_token_rate                  SFT -> QLoRA r=16: 1.0000 -> 0.0000 (-1.0000) RESOLVED
+      intervals do not overlap - the difference exceeds the uncertainty | BEHAVIOURAL metric: Phase 4 found perplexity within 3.5% while this was 0/4 vs 4/4
+  generated_length                 SFT -> QLoRA r=16: 117.3333 -> 256.0000 (+138.6667) 
+      reported for every comparison - Phases 5 and 6 both found length driving a number that looked like quality
+  perplexity[completion]           SFT -> DPO b=0.1: 7.3984 -> 7.3978 (-0.0006) 
+      token-weighted over 27127/27127 completion tokens; perplexities are comparable only within a region
+  perplexity[full_sequence]        SFT -> DPO b=0.1: 12.2839 -> 12.2866 (+0.0027) 
+      token-weighted over 43527/43527 full_sequence tokens; perplexities are comparable only within a region
+  preference_sum (PRIMARY)         SFT -> DPO b=0.1: 0.4674 -> 0.4674 (+0.0000) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  preference_mean (diagnostic)     SFT -> DPO b=0.1: 0.5870 -> 0.5870 (+0.0000) unresolved
+      intervals overlap at n=184/184 - NOT resolvable at this sample size
+  stop_token_rate                  SFT -> DPO b=0.1: 1.0000 -> 1.0000 (+0.0000) unresolved
+      intervals overlap at n=6/6 - NOT resolvable at this sample size | BEHAVIOURAL metric: Phase 4 found perplexity within 3.5% while this was 0/4 vs 4/4
+  generated_length                 SFT -> DPO b=0.1: 117.3333 -> 118.1667 (+0.8333) 
+      reported for every comparison - Phases 5 and 6 both found length driving a number that looked like quality
+
+------------------------------------------------------------------------------------------------------------
+LLM-AS-JUDGE   (NOT ground truth)
+------------------------------------------------------------------------------------------------------------
+  base vs SFT  (judge: Qwen/Qwen2.5-7B-Instruct)
+    a=1 b=3 tie=0 inconsistent=2 of 6
+    position bias rate: 33.3%
+    win rate (B, decided only): 0.750 [0.301, 0.954] -> NOT resolvable at n=4: the interval includes 0.5
+  SFT vs DPO b=0.1  (judge: Qwen/Qwen2.5-7B-Instruct)
+    a=1 b=1 tie=3 inconsistent=1 of 6
+    position bias rate: 16.7%
+    win rate (B, decided only): 0.500 [0.095, 0.905] -> NOT resolvable at n=2: the interval includes 0.5
+
+------------------------------------------------------------------------------------------------------------
+EVALUATION-DESIGN LESSONS CARRIED FORWARD
+------------------------------------------------------------------------------------------------------------
+  - Phase 3: a loss is a mean over a token POPULATION. Masked and unmasked losses are not comparable in either direction - measured 6.3314 (prompt) vs 3.6295 (completion) on the same model.
+  - Phase 4: perplexity put the PEFT arms within 3.5% of full SFT while stop-token behaviour was 0/4 vs 4/4. A likelihood metric did not reveal an unusable model.
+  - Phase 5: the same preference comparison gave 47.2% (SUM) and 58.3% (MEAN) on identical models and data - an 11-point swing from length.
+  - Phase 6: the SUM preference metric was dominated by a ~29-nat length gap. Per token the chosen response was genuinely better; the SUM comparison inverted that verdict.
+  - Therefore: always report the denominator, always report length beside preference and quality, and never collapse metrics into one score.
+
+============================================================================================================
+NO AGGREGATE SCORE IS PRODUCED. Phases 3-6 each found two metrics
+disagreeing, and each disagreement was the finding. A weighted average
+would have erased all four.
+============================================================================================================

@@ -12,10 +12,12 @@ evidence. Two separate interpreter invocations agreeing is the real claim.
 
 from __future__ import annotations
 
+import os
 import random
 import subprocess
 import sys
 import textwrap
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -113,12 +115,22 @@ _SUBPROCESS_SCRIPT = textwrap.dedent(
 
 
 def _run_in_subprocess(seed: int) -> str:
+    # pytest puts src/ on sys.path via pyproject's `pythonpath` setting, but a
+    # child interpreter does not inherit that - it only sees PYTHONPATH. Pass
+    # it explicitly so this test does not depend on how pytest was invoked or
+    # on the package happening to be pip-installed.
+    src = str(Path(__file__).resolve().parents[1] / "src")
+    env = dict(os.environ)
+    env["PYTHONPATH"] = os.pathsep.join(
+        [src, env["PYTHONPATH"]] if env.get("PYTHONPATH") else [src]
+    )
     result = subprocess.run(
         [sys.executable, "-c", _SUBPROCESS_SCRIPT.format(seed=seed)],
         capture_output=True,
         text=True,
         timeout=180,
         check=True,
+        env=env,
     )
     return result.stdout.strip()
 

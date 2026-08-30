@@ -50,6 +50,33 @@ Perplexity separated the arms by **3.5%**. Stop-token behaviour separated them
 **completely**. All three PEFT models wrote fluent, on-topic answers and then
 ran to the token cap forever.
 
+**Phase 7 re-measured this on its own evaluation set** (150 examples / 27,127
+completion tokens, versus Phase 4's full split / 38,831) and it replicated:
+
+| model | completion ppl | emitted `<\|im_end\|>` | distinct-2 |
+|---|---:|---:|---:|
+| base | 8.824 | 0/6 | 0.523 |
+| **full SFT** | **7.398** | **6/6** | **0.839** |
+| LoRA r=16 | 7.665 | **0/6** | 0.449 |
+| QLoRA r=16 | 7.733 | **0/6** | 0.572 |
+
+The absolute perplexities differ from Phase 4's because the token population
+differs — *which is §2's own lesson recurring one phase later*. What replicates
+is the comparison: base→SFT −15.7% then −16.2%; SFT→LoRA +3.5% then +3.6%. See
+`docs/phase7/EVAL_RESULTS.md` §4.
+
+Phase 7's generations also showed **why** the PEFT failure is worse than
+"runs long". Past the answer, LoRA and QLoRA fall back into the chat template:
+
+```
+Dear [Name], ... Best regards, [Your Name] комф
+You are a helpful assistant.TRGL
+You are a helpful assistant.TRGL   [to the cap]
+```
+
+Never having learned `<|im_end|>`, the likeliest continuation after a finished
+answer is the next ChatML turn — so the model regurgitates the system prompt.
+
 The mechanism was structural: emitting a rare token means moving its *logit*,
 which `lm_head` produces — and `lm_head` is tied to the embedding, so it was
 excluded from LoRA's target set. Full fine-tuning moved that matrix by relative
@@ -100,6 +127,24 @@ DPO achieved 0.04 at the pre-registered LR (**728× short**) and 0.70 at 10×
 decomposition on any preference set, and the dashboard prints it for every
 model.
 
+**Phase 7 ran that decomposition on all five models at once, and the result is
+stronger than Phase 6's single case:**
+
+| model | chosen/token | rejected/token | SUM gap | explained by length | residual |
+|---|---:|---:|---:|---:|---:|
+| base (untrained) | −1.1470 | −1.1607 | −30.57 | −34.28 | **+3.71** |
+| SFT | −1.0713 | −1.0803 | −29.47 | −31.90 | **+2.43** |
+| LoRA r=16 | −1.1001 | −1.1098 | −30.13 | −32.78 | **+2.65** |
+| QLoRA r=16 | −1.0924 | −1.1005 | −30.30 | −32.50 | **+2.20** |
+| DPO b=0.1 | −1.0712 | −1.0804 | −29.43 | −31.91 | **+2.48** |
+
+Every model prefers the chosen response **per token**, and every model's SUM
+comparison **inverts** that verdict. The residual is positive in all five rows,
+including the **untrained base model**.
+
+> The inversion is not a property of any training stage. It is a property of
+> the metric.
+
 ---
 
 ## 3. Perplexity, precisely
@@ -128,7 +173,8 @@ correct computation and almost always means a sign error.
 
 The normal approximation `p ± z·√(p(1−p)/n)` produces bounds outside [0, 1] and
 has poor coverage at small n — exactly where this project lives: 184 preference
-pairs, 6 generation prompts, ~12 judge comparisons.
+pairs, 6 generation prompts, and 4 and 2 decided judge verdicts after
+position-flips were excluded.
 
 **Wilson score intervals** stay inside [0, 1] and behave at small n. Verified
 against a known value: 50/100 gives **[0.4038, 0.5962]**.
@@ -163,6 +209,37 @@ itself on **no** pair and yields **zero** decided verdicts — not a spurious
 asserts exactly this.
 
 `position_bias_rate` is a first-class reported number.
+
+### What it measured
+
+| | base vs SFT | SFT vs DPO b=0.1 |
+|---|---|---|
+| a / b / tie | 1 / 3 / 0 | 1 / 1 / 3 |
+| **inconsistent (excluded)** | **2 of 6** | 1 of 6 |
+| position bias rate | **33.3%** | 16.7% |
+| win rate (B, decided) | 0.750 [0.301, 0.954] | 0.500 [0.095, 0.905] |
+| verdict | **NOT resolvable at n=4** | **NOT resolvable at n=2** |
+
+**Base produces `-unstyled` repeated 128 times and SFT produces a correct
+email, and the judge still could not resolve the comparison.** Two of six pairs
+were position-flips and were excluded, leaving n=4.
+
+That is the protocol working. A one-order judge would have reported a clean win
+rate over six pairs while a third of its verdicts were decided by presentation
+order. On the cooking prompt — base answered in Chinese, SFT in English — the
+judge replied `A` in **both** orders: it picked whichever it saw first, twice.
+
+**Calibration.** MT-Bench (arXiv 2306.05685, Table 2) reports GPT-4 consistent
+on 65.0% of pairs and Claude-v1 on 23.8%. A high bias rate from a 7B judge is
+the expected result, not an anomaly — and at n=6 we claim no comparison with
+those figures.
+
+### An accidental positive control
+
+Two of the six SFT-vs-DPO pairs had **byte-identical** answers and a third
+differed by two words. The judge returned `TIE` on all three, in both orders,
+unprompted. Weak evidence — n=3, one judge — but it was not designed in, and a
+judge answering at random would not do it.
 
 ### What is excluded, and why
 

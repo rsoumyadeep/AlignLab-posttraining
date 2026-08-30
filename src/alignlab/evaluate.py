@@ -153,6 +153,31 @@ def load_preference_examples(cfg, seed: int):
     return list(evaluation), info
 
 
+
+def _fingerprint_record(section, info: dict) -> dict:
+    """The dataset identity behind one metric family.
+
+    Populated per family rather than once per run: the eval-full-001 dashboard
+    carried ``dataset_fingerprint: null`` in every record while a single
+    ``eval_fingerprint`` named the preference rows and sat beside the
+    perplexity numbers as well. A provenance field that is silently null is the
+    same failure this project's status vocabulary exists to prevent.
+    """
+    if not info:
+        return {"status": NOT_MEASURED}
+    fingerprint = info.get("eval_fingerprint", {})
+    return {
+        "status": APPLICABLE,
+        "dataset": info.get("name"),
+        "split": info.get("eval_split"),
+        "revision": info.get("revision"),
+        "n_rows": info.get("eval_rows"),
+        "rows_dropped": info.get("eval_rows_dropped"),
+        "sha256": fingerprint.get("sha256"),
+        "max_examples": getattr(section, "max_examples", None),
+    }
+
+
 def run_evaluation_suite(cfg: DictConfig) -> dict[str, Any]:
     from transformers import AutoTokenizer
 
@@ -186,6 +211,11 @@ def run_evaluation_suite(cfg: DictConfig) -> dict[str, Any]:
         pref_examples, pref_info = load_preference_examples(cfg, cfg.reproducibility.seed)
         logger.info("preference set: %d pairs (%s)", len(pref_examples),
                     pref_info["eval_fingerprint"]["sha256"][:16])
+
+    fingerprints = {
+        "perplexity": _fingerprint_record(cfg.eval.perplexity, lm_info),
+        "preference": _fingerprint_record(cfg.eval.preference, pref_info),
+    }
 
     settings = GenerationSettings(
         max_new_tokens=cfg.eval.generation.max_new_tokens,
@@ -245,11 +275,14 @@ def run_evaluation_suite(cfg: DictConfig) -> dict[str, Any]:
             device=device, dtype=dtype,
             model_revision=revision, checkpoint=str(path),
             dataset=cfg.eval.perplexity.dataset if cfg.eval.perplexity.enabled else None,
-            eval_fingerprint=(
-                pref_info.get("eval_fingerprint", {}).get("sha256") if pref_info else None
-            ),
+            dataset_fingerprint=fingerprints["perplexity"].get("sha256"),
+            eval_fingerprint=fingerprints["preference"].get("sha256"),
             generation=settings.to_dict(),
             judge_model=cfg.eval.judge.model if cfg.eval.judge.enabled else None,
+            # Two metric families read two different datasets. A single
+            # eval_fingerprint field sitting beside both sets of numbers
+            # invites attributing the perplexity to the preference rows.
+            extras={"fingerprints": fingerprints},
         )
 
         statuses: dict[str, str] = {}

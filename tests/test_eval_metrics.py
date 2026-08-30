@@ -17,6 +17,7 @@ import pytest
 
 from alignlab.evals.metrics import (
     APPLICABLE,
+    NOT_MEASURED,
     ComparisonVerdict,
     Interval,
     PreferenceStats,
@@ -380,3 +381,61 @@ class TestDashboard:
         text = render_text(d)
         assert "NO AGGREGATE SCORE IS PRODUCED" in text
         assert "SFT" in text and "PEFT" in text
+
+
+class TestProvenanceFingerprints:
+    """eval-full-001 shipped with dataset_fingerprint null in every record."""
+
+    def _section(self, max_examples=200):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(max_examples=max_examples)
+
+    def _info(self):
+        return {
+            "name": "HuggingFaceH4/no_robots",
+            "revision": None,
+            "eval_split": "test",
+            "eval_rows": 200,
+            "eval_rows_dropped": 3,
+            "eval_fingerprint": {"sha256": "b3bc775a" + "0" * 56},
+        }
+
+    def test_populated_family_records_its_own_dataset(self):
+        from alignlab.evaluate import _fingerprint_record
+
+        record = _fingerprint_record(self._section(), self._info())
+        assert record["status"] == APPLICABLE
+        assert record["dataset"] == "HuggingFaceH4/no_robots"
+        assert record["split"] == "test"
+        assert record["n_rows"] == 200
+        assert record["sha256"].startswith("b3bc775a")
+
+    def test_no_field_is_silently_null_when_applicable(self):
+        from alignlab.evaluate import _fingerprint_record
+
+        record = _fingerprint_record(self._section(), self._info())
+        # revision is legitimately None (the dataset is unpinned); every other
+        # field must carry a value rather than a silent null.
+        nulls = [k for k, v in record.items() if v is None and k != "revision"]
+        assert nulls == [], f"silently null provenance fields: {nulls}"
+
+    def test_disabled_family_says_NOT_MEASURED_not_null(self):
+        from alignlab.evaluate import _fingerprint_record
+
+        record = _fingerprint_record(self._section(), {})
+        assert record == {"status": NOT_MEASURED}
+        assert "sha256" not in record
+
+    def test_the_two_families_are_distinguishable(self):
+        from alignlab.evaluate import _fingerprint_record
+
+        pref = dict(self._info())
+        pref["name"] = "HuggingFaceH4/ultrafeedback_binarized"
+        pref["eval_split"] = "test_prefs"
+        pref["eval_fingerprint"] = {"sha256": "deadbeef" + "0" * 56}
+
+        a = _fingerprint_record(self._section(), self._info())
+        b = _fingerprint_record(self._section(), pref)
+        assert a["dataset"] != b["dataset"]
+        assert a["sha256"] != b["sha256"]

@@ -1,0 +1,36 @@
+2026-08-30 14:59:00 | INFO     | alignlab.__main__ | evaluate.py:164 | ======================================================================
+2026-08-30 14:59:00 | INFO     | alignlab.__main__ | evaluate.py:165 | AlignLab Phase 7 - evaluation suite
+2026-08-30 14:59:00 | INFO     | alignlab.__main__ | evaluate.py:166 | ======================================================================
+2026-08-30 14:59:00 | DEBUG    | alignlab.seeding | seeding.py:94 | Seeded RNGs: SeedReport(seed=42, deterministic=False, cudnn_benchmark=True, cublas_workspace_config=None)
+2026-08-30 14:59:01 | INFO     | alignlab.data | data.py:245 | loading HuggingFaceH4/no_robots@main
+2026-08-30 14:59:06 | INFO     | alignlab.data | data.py:286 | train: dropped 1/9500 malformed rows (0.01%)
+2026-08-30 14:59:06 | INFO     | alignlab.data | data.py:320 | train 1 rows (f33fa56c4eb24709), eval 150 rows (f92fdec349b9c8ed)
+2026-08-30 14:59:06 | INFO     | alignlab.__main__ | evaluate.py:181 | perplexity set: 150 examples (f92fdec349b9c8ed)
+2026-08-30 14:59:06 | INFO     | alignlab.preference | preference.py:304 | loading HuggingFaceH4/ultrafeedback_binarized@main
+2026-08-30 14:59:10 | WARNING  | alignlab.preference | preference.py:276 | preference audit: 11.9% of pairs are score TIES - the annotator rated both responses equally, yet the pair is used as a preference. Bradley-Terry assumes a genuine ordering.
+2026-08-30 14:59:10 | WARNING  | alignlab.preference | preference.py:276 | preference audit: 14 pairs have IDENTICAL chosen and rejected text; their log-ratio is zero by construction. Filtered.
+2026-08-30 14:59:10 | WARNING  | alignlab.preference | preference.py:276 | preference audit: LENGTH BIAS: chosen is longer in 55.8% of pairs (mean 1291 vs 1132 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data.
+2026-08-30 14:59:10 | WARNING  | alignlab.preference | preference.py:276 | preference audit: 13.6% of pairs are score TIES - the annotator rated both responses equally, yet the pair is used as a preference. Bradley-Terry assumes a genuine ordering.
+2026-08-30 14:59:10 | WARNING  | alignlab.preference | preference.py:276 | preference audit: 12 pairs have IDENTICAL chosen and rejected text; their log-ratio is zero by construction. Filtered.
+2026-08-30 14:59:10 | WARNING  | alignlab.preference | preference.py:276 | preference audit: LENGTH BIAS: chosen is longer in 56.4% of pairs (mean 1334 vs 1129 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data.
+2026-08-30 14:59:15 | INFO     | alignlab.preference | preference.py:343 | train_prefs: 61135 rows -> 61135 after tie-drop -> 60630 well-formed (dropped 505)
+2026-08-30 14:59:15 | INFO     | alignlab.preference | preference.py:343 | test_prefs: 2000 rows -> 2000 after tie-drop -> 1985 well-formed (dropped 15)
+2026-08-30 14:59:15 | INFO     | alignlab.preference | preference.py:377 | preference train 1 rows (4e29f5c6be0eab2b), eval 200 rows (b3bc775a6db554cc)
+2026-08-30 14:59:15 | INFO     | alignlab.__main__ | evaluate.py:187 | preference set: 200 pairs (b3bc775a6db554cc)
+2026-08-30 14:59:15 | INFO     | alignlab.__main__ | evaluate.py:231 | evaluating base (Qwen/Qwen2.5-1.5B)
+2026-08-30 14:59:21 | INFO     | alignlab.evals.runners | runners.py:217 | perplexity: skipped 3 of 150 examples
+2026-08-30 14:59:58 | INFO     | alignlab.__main__ | evaluate.py:231 | evaluating SFT (/data/home/rsoumyadeep/AlignLab/checkpoints/sft-qwen1p5b-noRobots-001/final)
+2026-08-30 15:00:02 | INFO     | alignlab.evals.runners | runners.py:217 | perplexity: skipped 3 of 150 examples
+2026-08-30 15:00:27 | INFO     | alignlab.__main__ | evaluate.py:231 | evaluating LoRA r=16 (/data/home/rsoumyadeep/AlignLab/checkpoints/lora-r16-lr2e-4-001/final)
+2026-08-30 15:00:28 | INFO     | alignlab.__main__ | evaluate.py:123 |   loading as ADAPTER (unmerged) on top of Qwen/Qwen2.5-1.5B
+2026-08-30 15:00:35 | INFO     | alignlab.evals.runners | runners.py:217 | perplexity: skipped 3 of 150 examples
+2026-08-30 15:01:43 | INFO     | alignlab.__main__ | evaluate.py:231 | evaluating QLoRA r=16 (/data/home/rsoumyadeep/AlignLab/checkpoints/qlora-r16-lr2e-4-001/final)
+2026-08-30 15:01:43 | INFO     | alignlab.__main__ | evaluate.py:123 |   loading as ADAPTER (unmerged) on top of Qwen/Qwen2.5-1.5B
+2026-08-30 15:01:50 | INFO     | alignlab.evals.runners | runners.py:217 | perplexity: skipped 3 of 150 examples
+2026-08-30 15:02:58 | INFO     | alignlab.__main__ | evaluate.py:231 | evaluating DPO b=0.1 (/data/home/rsoumyadeep/AlignLab/checkpoints/dpo-beta0.1-sum/final)
+2026-08-30 15:03:02 | INFO     | alignlab.evals.runners | runners.py:217 | perplexity: skipped 3 of 150 examples
+2026-08-30 15:03:28 | INFO     | alignlab.__main__ | evaluate.py:328 | loading judge: Qwen/Qwen2.5-7B-Instruct
+2026-08-30 15:05:59 | INFO     | alignlab.evals.judge | judge.py:303 | judge base vs SFT: a=1 b=3 tie=0 inconsistent=2 (position bias 33.3%)
+2026-08-30 15:06:01 | INFO     | alignlab.evals.judge | judge.py:303 | judge SFT vs DPO b=0.1: a=1 b=1 tie=3 inconsistent=1 (position bias 16.7%)
+2026-08-30 15:06:01 | INFO     | alignlab.evals.report | report.py:108 | Wrote evaluation dashboard: /data/home/rsoumyadeep/AlignLab/outputs/eval-full-001/evaluation_dashboard.json
+2026-08-30 15:06:01 | INFO     | alignlab.__main__ | evaluate.py:318 | dashboard: /data/home/rsoumyadeep/AlignLab/outputs/eval-full-001/evaluation_dashboard.json

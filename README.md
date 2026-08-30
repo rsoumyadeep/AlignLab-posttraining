@@ -22,20 +22,33 @@ the work can be reproduced, explained, defended and extended.
 
 ---
 
-## Current status — Phase 3 (SFT) complete
+## Current status — Phase 7 (Evaluation) complete
 
 **Phase 1** built the engineering foundation. **Phase 2** built the Transformer
 components from first principles: attention in PyTorch/NumPy/pure Python,
 RoPE/ALiBi/sinusoidal, RMSNorm, SwiGLU, a decoder-only model, a KV cache, and
 five decoding strategies.
 
-**Phase 3 fine-tunes the real model.** Qwen2.5-1.5B weights (2.886 GiB, pinned
-revision `8faed761`) are downloaded, and the base model is supervised
-fine-tuned on `HuggingFaceH4/no_robots` using TRL's `SFTTrainer` — with the
-loss mask verified against an independent computation before every run, because
-PROJECT_INSTRUCTIONS §3 makes that a precondition for PEFT.
+**Phases 3–6 trained the real model** — full SFT, LoRA, QLoRA and DPO on
+Qwen2.5-1.5B (pinned revision `8faed761`), each stage verifying its own
+preconditions before the first optimiser step.
 
-No LoRA, no QLoRA, no DPO yet.
+**Phase 7 measures all five resulting models on one evaluation pass.** The
+headline is that most differences are *not* resolvable at this sample size, and
+the dashboard says so rather than reporting a number:
+
+| model | ppl[compl] | pref SUM | pref MEAN | stop | distinct-2 |
+|---|---:|---:|---:|---:|---:|
+| base | 8.824 | 45.7% | 61.4% | 0/6 | 0.523 |
+| **SFT** | **7.398** | 46.7% | 58.7% | **6/6** | **0.839** |
+| LoRA r=16 | 7.665 | 46.7% | 60.9% | 0/6 | 0.449 |
+| QLoRA r=16 | 7.733 | 46.7% | 61.4% | 0/6 | 0.572 |
+| DPO b=0.1 | 7.398 | 46.7% | 58.7% | **6/6** | 0.831 |
+
+Of the 24 pairwise comparisons produced, **3 were resolvable** — all of them
+stop-token rates. **There is no aggregate quality score**, and no function that
+could produce one: in each of Phases 3–6 two metrics disagreed and the
+disagreement *was* the finding. Details in `docs/phase7/EVAL_RESULTS.md`.
 
 | Phase | Status |
 |---|---|
@@ -47,7 +60,7 @@ No LoRA, no QLoRA, no DPO yet.
 | 4 — PEFT (LoRA / QLoRA) | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 5 — Preference learning / RLHF | ✅ **COMPLETE** (infra/measurements/docs); PPO conceptual only |
 | 6 — DPO | ✅ **COMPLETE** (impl/sweep/docs); pre-registered sweep returned a characterised null |
-| 7 — Evaluation | ⬜ skeleton only |
+| 7 — Evaluation | ✅ **COMPLETE** (subsystem/full run/docs); judge comparisons under-powered by design of the prompt set |
 | 8 — Engineering polish | ⬜ not started |
 
 ---
@@ -113,6 +126,21 @@ and a test asserts that every adapter setting is shared between `lora` and
 `qlora`. Every run re-verifies its own loss mask before the first optimiser
 step and refuses to train if it disagrees with an independent computation.
 
+### Evaluation (Phase 7)
+
+```bash
+python -m alignlab.evaluate env=server eval=default   # all 5 models + judge
+python -m alignlab.evaluate env=server eval=quick     # no judge, small subsets
+```
+
+Adding a model to `configs/eval/default.yaml` is the only change needed to
+include it — nothing is hard-coded in the entrypoint. Adapters are loaded
+**unmerged** (Phase 4 measured bf16 merging as 12,460x less exact than fp32, so
+a merged adapter would measure the adapter *plus* a merge artefact). Every pair
+sent to the judge is judged **twice, in both orders**; verdicts that flip are
+reported as position bias and excluded from the win rate rather than split as
+half-wins.
+
 ### Server (`csrslave`)
 
 ```bash
@@ -121,7 +149,7 @@ uv venv --python 3.11 .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install \n    --index-url https://download.pytorch.org/whl/cu124 torch
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -e ".[tracking,dev]"
 
-.venv/bin/python -m pytest -q                       # 500 passed, 1 skipped
+.venv/bin/python -m pytest -q                       # 580 passed locally, 3 skipped
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python -m alignlab.train env=server
 ```
 
@@ -142,8 +170,11 @@ src/alignlab/logprobs.py    sequence log-probs, KL - the DPO/PPO arithmetic
 src/alignlab/dpo.py         first-principles DPO loss (Phase 6), verified vs the paper
 src/alignlab/dpo_train.py   DPO training loop - our loss, not TRL's trainer
 src/alignlab/sft.py  SFT/LoRA/QLoRA entrypoint with three pre-flight audits
+src/alignlab/evals/  evaluation subsystem (Phase 7): pure metrics, model
+                     runners, two-order LLM judge, dashboard with NO aggregate score
+src/alignlab/evaluate.py    Hydra entrypoint for the full evaluation pass
 configs/            Hydra tree; env/ group absorbs machine differences
-tests/              501 tests; no network or credentials needed
+tests/              580 tests; no network or credentials needed
 scripts/            env_report.py, server_probe.sh (executed on csrslave)
 docs/phase1/        phase reports, storage policy, server probe evidence
 docs/phase2/        Phase 2 report + verbatim GPU experiment output
@@ -151,6 +182,7 @@ docs/phase3/        Phase 3 report, weight-download evidence, before/after eval
 docs/phase4/        Phase 4 report, bitsandbytes verification, SVD rank analysis
 docs/phase5/        Phase 5 report, preference-data readiness, KL measurements
 docs/phase6/        Phase 6 report, beta pre-registration, DPO sweep evidence
+docs/phase7/        Phase 7 report, eval-full-001 dashboard (JSON + text + log)
 
 STUDY_WITH_CLAUDE/  theory, intuition, derivations + USER checkpoints
 CODE_EXPLANATION/   what the code actually does (never imagined code)

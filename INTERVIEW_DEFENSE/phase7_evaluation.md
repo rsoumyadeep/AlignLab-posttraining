@@ -17,14 +17,26 @@ What I measured for SFT against the base model:
 
 | | base | SFT |
 |---|---:|---:|
-| completion perplexity | 8.541 | **7.199** |
-| emitted `<\|im_end\|>` | 0/4 | **4/4** |
+| completion perplexity | 8.824 | **7.398** |
+| emitted `<\|im_end\|>` | 0/6 | **6/6** |
+| distinct-2 | 0.523 | **0.839** |
 | generation | degenerate repetition (`-unstyled` ×N), answered an English prompt in Chinese | coherent, correctly formatted, terminates |
 
-**The perplexity gain is 15.7% and it is the weaker evidence.** It measures fit
+**The perplexity gain is 16.2% and it is the weaker evidence.** It measures fit
 to no_robots' own test split — the distribution SFT trained on. The *strong*
 evidence is behavioural: the model learned to stop, which is binary,
-user-visible, and invisible to perplexity.
+user-visible, and invisible to perplexity. Its interval and base's are
+disjoint, so it is the one comparison in the whole run marked **RESOLVED**.
+
+**And the judge did not confirm it.** SFT won 3 of 4 *decided* pairs —
+[0.301, 0.954], which includes 0.5. Two of six pairs were position-flips and
+were excluded. I report that rather than the 6-pair number it would have
+produced, and it is the most useful thing in the run: my strongest qualitative
+result is one my weakest instrument cannot see.
+
+*(Phase 4 measured 8.541 / 7.199 on the full test split — 38,831 completion
+tokens against Phase 7's 27,127. Different token population, same conclusion;
+the reconciliation is in `docs/phase7/EVAL_RESULTS.md` §4.)*
 
 **What I will not say:** "SFT made a better assistant." I have no
 out-of-distribution evaluation, so that claim is not supported.
@@ -35,17 +47,33 @@ out-of-distribution evaluation, so that claim is not supported.
 
 I have a measured case, not an argument.
 
-Phase 4, four models on the same held-out data:
+Phase 7, three models on the same held-out data:
 
-| model | completion ppl | emitted `<\|im_end\|>` |
-|---|---:|---:|
-| full SFT | 7.199 | **4/4** |
-| LoRA r=16 | 7.449 | **0/4** |
-| QLoRA r=16 | 7.511 | **0/4** |
+| model | completion ppl | emitted `<\|im_end\|>` | distinct-2 |
+|---|---:|---:|---:|
+| full SFT | 7.398 | **6/6** | **0.839** |
+| LoRA r=16 | 7.665 | **0/6** | 0.449 |
+| QLoRA r=16 | 7.733 | **0/6** | 0.572 |
 
-Perplexity separated them by **3.5%**. Stop-token behaviour separated them
-**completely**. The PEFT models wrote fluent, on-topic answers and then ran to
-the token cap forever — unusable, and perplexity said "fine".
+Perplexity separated them by **3.6%**. Stop-token behaviour separated them
+**completely** — and that gap is RESOLVED at n=6 while nothing else in the run
+is. The PEFT models wrote fluent, on-topic answers and then ran to the token
+cap forever — unusable, and perplexity said "fine". (Phase 4 measured the same
+thing on a larger token population: 3.5%, 0/4 vs 4/4.)
+
+**What they do after the answer is the part I'd lead with.** Verbatim:
+
+```
+Dear [Name], ... Best regards, [Your Name] комф
+You are a helpful assistant.TRGL
+You are a helpful assistant.TRGL   [to the 256-token cap]
+```
+
+They fall back into the chat template. With no `<|im_end|>` in their
+vocabulary of learned behaviour, the likeliest continuation after a finished
+answer is the next ChatML turn — so the model emits the system prompt back.
+Perplexity on the reference completions cannot see any of that, because none of
+those tokens are in the reference.
 
 **The mechanism, which is the part worth knowing:** emitting a rare token means
 moving that token's *logit*, produced by `lm_head` — which is tied to the
@@ -95,6 +123,21 @@ pre-registered LR and 0.70 at 10×.
 MEAN, or either without token counts, and `length_attribution()` runs that
 decomposition automatically. The failure mode is designed out, not remembered.
 
+**And Phase 7 showed it isn't a quirk of one model.** Running the decomposition
+across all five:
+
+| model | SUM gap | explained by length | residual |
+|---|---:|---:|---:|
+| base (untrained) | −30.57 | −34.28 | **+3.71** |
+| SFT | −29.47 | −31.90 | **+2.43** |
+| LoRA r=16 | −30.13 | −32.78 | **+2.65** |
+| QLoRA r=16 | −30.30 | −32.50 | **+2.20** |
+| DPO b=0.1 | −29.43 | −31.91 | **+2.48** |
+
+Positive residual in every row — **including the untrained base model, which
+has had no preference training at all.** The inversion is not something any
+training stage caused. It is a property of the metric.
+
 ---
 
 ## Q4. "How would you evaluate an aligned model?"
@@ -137,6 +180,14 @@ A judge that always picks the first answer therefore agrees with itself on no
 pair and produces **zero decided verdicts**, not a spurious 100% win rate.
 That's asserted by a test with a scripted position-biased judge, and
 `position_bias_rate` is reported as a first-class number.
+
+**Measured: 33.3% on base-vs-SFT.** Two of six pairs flipped. On one — base
+answered a cooking question in Chinese, SFT in English — the judge said `A` in
+both presentation orders, i.e. it picked whichever came first, twice.
+
+For calibration: MT-Bench (arXiv 2306.05685, Table 2) reports GPT-4 consistent
+on only **65%** of pairs and Claude-v1 on **23.8%**. So a high bias rate from a
+7B judge is expected. I make no claim my judge compares to theirs — n=6.
 
 **2. It is not ground truth.** My judge has never been validated against human
 preference in this project. No agreement study was run.
@@ -214,8 +265,9 @@ from my own data:
 
 No — it is a working measurement apparatus reporting honestly.
 
-The project *did* find improvements: SFT cut completion perplexity 15.7% and
-took stop-token emission from 0/4 to 4/4, which is the difference between an
+The project *did* find improvements: SFT cut completion perplexity 16.2% and
+took stop-token emission from 0/6 to 6/6 - the only comparison in the entire
+run whose Wilson intervals are disjoint, and the difference between an
 unusable model and a usable one. What it did not find is DPO improving a
 length-dominated metric at an under-powered budget — and I can quantify both
 the budget shortfall (KL 0.0008 vs SFT's 0.2044, ~250×) and the metric's
@@ -235,9 +287,10 @@ neither is claimed now.
 ## Q9 (challenge). "What's the weakest part of your evaluation?"
 
 1. **Everything is in-distribution.** The single biggest gap (Q6).
-2. **Sample sizes are small** — 184 preference pairs, 6 generation prompts, ~12
-   judge comparisons. Most differences are genuinely unresolvable, and the
-   report says so rather than hiding it.
+2. **Sample sizes are small** — 184 preference pairs, 6 generation prompts, and
+   after excluding position-flips only **4 and 2 decided judge verdicts**. Of
+   the 24 pairwise comparisons the run produced, exactly **3 were resolvable**,
+   all of them stop-token rates. The report says so rather than hiding it.
 3. **The judge is unvalidated and same-family** (Q5).
 4. **One seed everywhere.** No variance estimate across runs.
 5. **No task-specific correctness checks** — no unit tests for code answers, no
