@@ -39,6 +39,38 @@ HYPOTHESES, recorded before running:
     H5  the pretrained model's loss on PROMPT tokens is LOWER than on
         COMPLETION tokens, so an unmasked loss is deflated                     [D]
 
+OUTCOMES, recorded after the first run and NOT retro-fitted to the results:
+
+    H1, H2, H3  PASS. The gate is open.
+
+    H4  NOT TESTED. Arm C could not be built at all: TRL rejects Qwen2.5's
+        stock chat template with "The chat template is not training-compatible
+        (missing prefix-preservation or {% generation %} markers)". An earlier
+        check of ours had concluded the template DID support this, by
+        substring-matching the word "generation" - which appears in the
+        template only as `add_generation_prompt`, a different thing entirely.
+        A grep is not a parser. Multi-turn assistant-only masking therefore
+        requires a custom template and is DEFERRED; Phase 3 trains on the
+        single-turn prompt/completion path, where the boundary is verifiable.
+
+    H5  DISPROVED, and the reason is worth more than the hypothesis was.
+        Measured: prompt 6.3314, completion 3.6295 - the prompt is HARDER.
+        The prediction assumed a model familiar with the chat template, but
+        this is the BASE model, which has never seen ChatML, and the opening
+        tokens have almost no left context. So a broken mask makes the loss
+        look WORSE here, not better. The corrected and stronger lesson: an
+        unmasked loss is a mean over a DIFFERENT POPULATION of tokens, so it
+        is not comparable to a masked loss in either direction.
+
+    A BUG IN THIS SCRIPT, found by its own cross-check. The first run reported
+    the loss decomposition failing to reconstruct by 1.8e-02. The masking was
+    fine; the counting was not. Positions were counted with
+    (labels != -100).sum() while the loss uses (labels[:, 1:] != -100).sum() -
+    the shift discards position 0, which has no predecessor to be predicted
+    from. With 25 rather than 26 prompt positions the decomposition agrees to
+    1.6e-07. The cross-check existed precisely so a wrong number could not
+    pass quietly, and it earned its place on the first run.
+
 Run (server):
     python scripts/experiments/e12_loss_masking.py
     python scripts/experiments/e12_loss_masking.py --skip-real-model
@@ -271,22 +303,31 @@ def arm_c(tokenizer, model) -> dict:
     }
 
 
-def _masked_mean_ce(logits, labels) -> float:
-    """Cross-entropy over non-ignored positions, computed by hand.
+def _masked_mean_ce(logits, labels) -> tuple[float, int]:
+    """Cross-entropy over non-ignored positions, plus the number that counted.
 
     Written out rather than delegated so the shift is visible: position t's
     logits predict token t+1, so logits lose their last position and labels
     lose their first. Getting this backwards is the other classic SFT bug.
+
+    RETURNING THE COUNT IS NOT COSMETIC. The number of positions that actually
+    contribute to the mean is ``(labels[:, 1:] != IGNORE_INDEX).sum()``, which
+    is NOT the same as ``(labels != IGNORE_INDEX).sum()`` whenever position 0
+    is unmasked - the shift discards it, because no token precedes it to
+    predict it from. Counting the wrong one is what made this script's first
+    run report a decomposition mismatch of 1.8e-02; see the header note.
     """
     shift_logits = logits[:, :-1, :]
     shift_labels = labels[:, 1:]
-    return float(
+    n_contributing = int((shift_labels != IGNORE_INDEX).sum())
+    loss = float(
         F.cross_entropy(
             shift_logits.reshape(-1, shift_logits.size(-1)).float(),
             shift_labels.reshape(-1),
             ignore_index=IGNORE_INDEX,
         )
     )
+    return loss, n_contributing
 
 
 def arm_d(tokenizer) -> dict:
@@ -315,51 +356,83 @@ def arm_d(tokenizer) -> dict:
     with torch.no_grad():
         logits = model(input_ids=input_ids).logits
 
-    loss_completion = _masked_mean_ce(logits, completion_only)
-    loss_prompt = _masked_mean_ce(logits, prompt_only)
-    loss_all = _masked_mean_ce(logits, everything)
+    loss_completion, n_completion = _masked_mean_ce(logits, completion_only)
+    loss_prompt, n_prompt = _masked_mean_ce(logits, prompt_only)
+    loss_all, n_all = _masked_mean_ce(logits, everything)
 
-    n_completion = int((completion_only != IGNORE_INDEX).sum())
-    n_prompt = int((prompt_only != IGNORE_INDEX).sum())
+    # The label-active count differs from the loss-contributing count exactly
+    # when position 0 is unmasked. Printing both makes the shift visible.
+    labelled_prompt = int((prompt_only != IGNORE_INDEX).sum())
 
-    print(f"\n  {'region':<26} {'tokens':>7} {'mean CE':>10}")
-    print(f"  {'PROMPT only (masked out)':<26} {n_prompt:>7} {loss_prompt:>10.4f}")
-    print(f"  {'COMPLETION only (trained)':<26} {n_completion:>7} {loss_completion:>10.4f}")
-    print(f"  {'everything (broken mask)':<26} {n_prompt + n_completion:>7} {loss_all:>10.4f}")
+    print(f"\n  {'region':<26} {'labelled':>9} {'counted':>8} {'mean CE':>10}")
+    print(f"  {'PROMPT only (masked out)':<26} {labelled_prompt:>9} {n_prompt:>8} {loss_prompt:>10.4f}")
+    print(f"  {'COMPLETION only (trained)':<26} {n_completion:>9} {n_completion:>8} {loss_completion:>10.4f}")
+    print(f"  {'everything (broken mask)':<26} {labelled_prompt + n_completion:>9} {n_all:>8} {loss_all:>10.4f}")
+    print(
+        f"\n  NOTE: the prompt region is labelled at {labelled_prompt} positions but only "
+        f"{n_prompt} contribute\n        to the loss - the shift drops position 0, which has "
+        f"no predecessor."
+    )
 
     h5 = loss_prompt < loss_completion
     ratio = loss_completion / loss_prompt if loss_prompt > 0 else float("inf")
 
-    print(f"\n  H5 holds (prompt is easier than completion): {h5}")
-    print(f"  completion loss / prompt loss              : {ratio:.2f}x")
-    print(f"  deflation from a broken mask               : {loss_completion:.4f} -> {loss_all:.4f}")
-    print(
-        "\n  INTERPRETATION: the pretrained model already predicts the templated"
-        "\n  prompt well, so including those positions drags the mean down. A run"
-        "\n  with a broken mask therefore reports a BETTER number while learning"
-        "\n  less of what we want. This is E2's lesson in a new place: a loss drop"
-        "\n  is not evidence of learning until you know which tokens produced it."
-    )
+    print(f"\n  H5 (prompt is EASIER than completion) : {h5}")
+    print(f"  completion loss / prompt loss         : {ratio:.2f}x")
+    print(f"  loss if masked correctly              : {loss_completion:.4f}")
+    print(f"  loss with the mask broken             : {loss_all:.4f}")
 
-    # Sanity: the three losses must be a weighted decomposition of each other.
+    if not h5:
+        print(
+            "\n  H5 IS DISPROVED, and the reason matters more than the hypothesis."
+            "\n  This is the BASE model, not the Instruct model: it was never trained"
+            "\n  on ChatML, so <|im_start|>system ... is UNFAMILIAR to it, and the"
+            "\n  opening tokens have almost no left context to be predicted from. The"
+            "\n  prompt is therefore HARDER than the answer, and a broken mask makes"
+            "\n  the reported loss look WORSE here, not better."
+            "\n"
+            "\n  The corrected lesson is stronger than the one predicted. An unmasked"
+            "\n  loss is not reliably lower OR higher - it is a mean over a DIFFERENT"
+            "\n  POPULATION of tokens, so it is not comparable to a masked loss at all."
+            "\n  Whether the contamination flatters or penalises depends on the model"
+            "\n  and the template. E2's rule survives in a sharper form: never compare"
+            "\n  losses computed over different token populations."
+        )
+    else:
+        print(
+            "\n  The pretrained model predicts the templated prompt more easily than"
+            "\n  the answer, so including those positions drags the mean down and a"
+            "\n  broken mask reports a better number while learning less."
+        )
+
+    # Sanity: the three losses must be a weighted decomposition of each other,
+    # using the COUNTED positions.
     reconstructed = (loss_prompt * n_prompt + loss_completion * n_completion) / (
         n_prompt + n_completion
     )
-    print(f"\n  cross-check: token-weighted mean of the two regions = {reconstructed:.4f}")
-    print(f"               loss over everything                    = {loss_all:.4f}")
-    print(f"               agree to 1e-3                           : {abs(reconstructed - loss_all) < 1e-3}")
+    agrees = abs(reconstructed - loss_all) < 1e-3
+    print(f"\n  cross-check: weighted mean of the regions = {reconstructed:.6f}")
+    print(f"               loss over everything          = {loss_all:.6f}")
+    print(f"               agree to 1e-3                 : {agrees}")
 
     return {
         "device": str(device),
         "dtype": str(dtype),
-        "n_prompt_tokens": n_prompt,
+        "n_prompt_labelled": labelled_prompt,
+        "n_prompt_counted": n_prompt,
         "n_completion_tokens": n_completion,
         "loss_prompt_only": loss_prompt,
         "loss_completion_only": loss_completion,
         "loss_everything": loss_all,
         "decomposition_reconstructed": reconstructed,
-        "decomposition_agrees": bool(abs(reconstructed - loss_all) < 1e-3),
+        "decomposition_agrees": bool(agrees),
         "H5": bool(h5),
+        "H5_note": (
+            "DISPROVED - base model has not seen ChatML, so the prompt is harder "
+            "than the completion; contamination direction is model-dependent"
+            if not h5
+            else "held"
+        ),
     }
 
 
