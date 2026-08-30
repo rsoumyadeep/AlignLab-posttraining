@@ -128,9 +128,27 @@ did. On ~270-token sequences a ±0.02-nat shift cannot flip a ranking.
 **So this is a training-budget result, not evidence DPO fails**: 116 steps × 16
 pairs = 1,856 pairs at lr 5e-7, against the paper's batch-64 RMSprop at 1e-6.
 
-**What I would not say:** "DPO didn't work." What I *can* say is that at this
-budget the policy did not move enough to change the metric, and I have the KL
-measurement that distinguishes those two claims.
+**But there is a deeper cause, and it is arithmetic.** On the eval set, chosen
+responses average −291.12 summed log-prob over 271.7 tokens; rejected −261.65
+over 242.2. **Per token, chosen is genuinely more likely** (−1.0713 vs
+−1.0803). The SUM comparison inverts that purely because chosen carries 29.5
+more tokens:
+
+```
+SUM gap                      = −29.47 nats
+explained by length alone    = −31.90 nats
+residual once length removed =  +2.43 nats  (chosen is BETTER)
+```
+
+So to flip the average pair under SUM, the policy must shift the gap by ~29
+nats. It achieved **0.04** at the pre-registered LR (728× short) and **0.70**
+in a 10× post-hoc run (42× short). **The metric is dominated by a property of
+the data, not of the model.**
+
+**What I would not say:** "DPO didn't work." What I *can* say is that the
+policy moved in the right direction, monotonically in β, by an amount ~42×
+too small to register on a length-dominated metric — and I have the numbers
+that separate those claims.
 
 ---
 
@@ -161,9 +179,15 @@ longer" is a gradient direction DPO can exploit.
 qualitative outputs are near-identical.
 
 That is a *consistent* null, not a lucky one: the model barely moved at all, so
-it had no opportunity to exploit the length direction. **The trap is still
-real** — it just needs a run with enough budget to spring it. Which is exactly
-what I would watch for next.
+it had no opportunity to exploit the length direction.
+
+**And then I sprang it.** A post-hoc run at 10× the learning rate — labelled as
+post-hoc, not pre-registered — produced **+30% generation length** (93.8 →
+122.0 tokens, max 146 → 206) while SUM accuracy *still* did not move.
+
+**So H4 is disproved in the sweep and confirmed in the diagnostic.** The trap is
+real; it appears exactly when training has enough signal to exploit it. That is
+a more useful finding than either result alone, and it is why I report both.
 
 ---
 

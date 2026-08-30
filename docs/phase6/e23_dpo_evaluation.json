@@ -1,0 +1,269 @@
+{
+  "eval_fingerprint": {
+    "name": "HuggingFaceH4/ultrafeedback_binarized",
+    "split": "test_prefs",
+    "revision": "main",
+    "n_rows": 200,
+    "n_chars": 690254,
+    "sha256": "b3bc775a6db554cc757152219fc9ffb2f54a016c6dd69635847df970224a7748"
+  },
+  "pairs": 184,
+  "phase5_baseline": {
+    "sum": 0.472,
+    "mean": 0.583
+  },
+  "results": {
+    "SFT (baseline)": {
+      "pairs": 184,
+      "preference_accuracy_sum": 0.4673913043478261,
+      "preference_accuracy_mean": 0.5869565217391305,
+      "reward_accuracy": 0.0,
+      "reward_margin": 0.0,
+      "kl_from_reference_mean": 0.0,
+      "kl_from_reference_median": 0.0,
+      "chosen_logp_mean": -291.1196347319561,
+      "rejected_logp_mean": -261.65098386355066,
+      "chosen_tokens_mean": 271.7391304347826,
+      "rejected_tokens_mean": 242.20652173913044,
+      "generation": {
+        "samples": [
+          {
+            "prompt": "Write a two-sentence summary of why the sky appears blue.",
+            "response": "The sky appears blue because of the scattering of sunlight by the atmosphere. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.",
+            "n_generated": 37,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "List three practical tips for someone learning to cook.",
+            "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n2. Practice makes perfect. Practice is key to learning how to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. There are many resources available, including cookbooks, online tutorials, and cooking classes.",
+            "n_generated": 146,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "What is the difference between a list and a tuple in Python?",
+            "response": "In Python, a list is a mutable data structure that can be changed after it is created. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. This means that once a tuple is created, its elements cannot be modified. \n\nHere is an example of a list and a tuple in Python:\n\nlist = [1, 2, 3]\ntuple = (1, 2, 3)\n\nIn the above example, the list is mutable and can be changed, while the tuple is immutable and cannot be changed.",
+            "n_generated": 117,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "Write a short, friendly email declining a meeting invitation.",
+            "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for that time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+            "n_generated": 75,
+            "emitted_im_end": true,
+            "hit_cap": false
+          }
+        ],
+        "mean_length": 93.75,
+        "max_length": 146,
+        "emitted_im_end": 4,
+        "hit_cap": 0
+      }
+    },
+    "DPO beta=0.01": {
+      "pairs": 184,
+      "preference_accuracy_sum": 0.4673913043478261,
+      "preference_accuracy_mean": 0.5869565217391305,
+      "reward_accuracy": 0.5108695652173914,
+      "reward_margin": -0.00013784987648883228,
+      "kl_from_reference_mean": 0.0008007899430832249,
+      "kl_from_reference_median": 0.0007987925200723112,
+      "chosen_logp_mean": -291.15094398933905,
+      "rejected_logp_mean": -261.66850813704986,
+      "chosen_tokens_mean": 271.7391304347826,
+      "rejected_tokens_mean": 242.20652173913044,
+      "generation": {
+        "samples": [
+          {
+            "prompt": "Write a two-sentence summary of why the sky appears blue.",
+            "response": "The sky appears blue because of Rayleigh scattering. This is when light is scattered by the molecules in the atmosphere. The blue light is scattered more than the other colors of light, which is why the sky appears blue.",
+            "n_generated": 45,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "List three practical tips for someone learning to cook.",
+            "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n2. Practice makes perfect. Practice is key to learning to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. There are many resources available, including cookbooks, online tutorials, and cooking classes.",
+            "n_generated": 145,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "What is the difference between a list and a tuple in Python?",
+            "response": "In Python, a list is a mutable data structure that can be changed after it is created. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. This means that once a tuple is created, its elements cannot be modified. \n\nHere is an example of a list and a tuple in Python:\n\nlist = [1, 2, 3]\ntuple = (1, 2, 3)\n\nIn the above example, the list is mutable and can be changed, while the tuple is immutable and cannot be changed.",
+            "n_generated": 117,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "Write a short, friendly email declining a meeting invitation.",
+            "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for the same time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+            "n_generated": 76,
+            "emitted_im_end": true,
+            "hit_cap": false
+          }
+        ],
+        "mean_length": 95.75,
+        "max_length": 145,
+        "emitted_im_end": 4,
+        "hit_cap": 0
+      }
+    },
+    "DPO beta=0.1": {
+      "pairs": 184,
+      "preference_accuracy_sum": 0.4673913043478261,
+      "preference_accuracy_mean": 0.5869565217391305,
+      "reward_accuracy": 0.5108695652173914,
+      "reward_margin": 0.004052500690981422,
+      "kl_from_reference_mean": 0.0007993005492608063,
+      "kl_from_reference_median": 0.0007858951576054096,
+      "chosen_logp_mean": -291.0997046128563,
+      "rejected_logp_mean": -261.6715787493664,
+      "chosen_tokens_mean": 271.7391304347826,
+      "rejected_tokens_mean": 242.20652173913044,
+      "generation": {
+        "samples": [
+          {
+            "prompt": "Write a two-sentence summary of why the sky appears blue.",
+            "response": "The sky appears blue because of Rayleigh scattering. This is when light is scattered by the molecules in the atmosphere. The blue light is scattered more than the other colors of light, which is why the sky appears blue.",
+            "n_generated": 45,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "List three practical tips for someone learning to cook.",
+            "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n2. Practice makes perfect. Practice is key to learning how to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. There are many resources available, including cookbooks, online tutorials, and cooking classes.",
+            "n_generated": 146,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "What is the difference between a list and a tuple in Python?",
+            "response": "In Python, a list is a mutable data structure that can be changed after it is created. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. This means that once a tuple is created, its elements cannot be modified. \n\nHere is an example of a list and a tuple in Python:\n\nlist = [1, 2, 3]\ntuple = (1, 2, 3)\n\nIn the above example, the list is mutable and can be changed, while the tuple is immutable and cannot be changed.",
+            "n_generated": 117,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "Write a short, friendly email declining a meeting invitation.",
+            "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for the same time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+            "n_generated": 76,
+            "emitted_im_end": true,
+            "hit_cap": false
+          }
+        ],
+        "mean_length": 96.0,
+        "max_length": 146,
+        "emitted_im_end": 4,
+        "hit_cap": 0
+      }
+    },
+    "DPO beta=0.5": {
+      "pairs": 184,
+      "preference_accuracy_sum": 0.4673913043478261,
+      "preference_accuracy_mean": 0.5869565217391305,
+      "reward_accuracy": 0.5434782608695652,
+      "reward_margin": 0.009046585015628649,
+      "kl_from_reference_mean": 0.0008029266117892289,
+      "kl_from_reference_median": 0.0007940528448671103,
+      "chosen_logp_mean": -291.14336723996246,
+      "rejected_logp_mean": -261.69280954158825,
+      "chosen_tokens_mean": 271.7391304347826,
+      "rejected_tokens_mean": 242.20652173913044,
+      "generation": {
+        "samples": [
+          {
+            "prompt": "Write a two-sentence summary of why the sky appears blue.",
+            "response": "The sky appears blue because of Rayleigh scattering. This is when light is scattered by the molecules in the atmosphere. The blue light is scattered more than the other colors of light, which is why the sky appears blue.",
+            "n_generated": 45,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "List three practical tips for someone learning to cook.",
+            "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n2. Practice makes perfect. Practice is key to learning to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. There are many resources available, including cookbooks, online tutorials, and cooking classes.",
+            "n_generated": 145,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "What is the difference between a list and a tuple in Python?",
+            "response": "In Python, a list is a mutable data structure that can be changed after it is created. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. This means that once a tuple is created, its elements cannot be modified. \n\nHere is an example of a list and a tuple in Python:\n\nlist = [1, 2, 3]\ntuple = (1, 2, 3)\n\nIn the above example, the list is mutable and can be changed, while the tuple is immutable and cannot be changed.",
+            "n_generated": 117,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "Write a short, friendly email declining a meeting invitation.",
+            "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for the same time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+            "n_generated": 76,
+            "emitted_im_end": true,
+            "hit_cap": false
+          }
+        ],
+        "mean_length": 95.75,
+        "max_length": 145,
+        "emitted_im_end": 4,
+        "hit_cap": 0
+      }
+    },
+    "[POST-HOC] b=0.1 lr5e-6": {
+      "pairs": 184,
+      "preference_accuracy_sum": 0.4673913043478261,
+      "preference_accuracy_mean": 0.592391304347826,
+      "reward_accuracy": 0.6521739130434783,
+      "reward_margin": 0.0700453955657355,
+      "kl_from_reference_mean": 0.002364538576448863,
+      "kl_from_reference_median": 0.0016817363211885095,
+      "chosen_logp_mean": -290.14229070621985,
+      "rejected_logp_mean": -261.3740937735723,
+      "chosen_tokens_mean": 271.7391304347826,
+      "rejected_tokens_mean": 242.20652173913044,
+      "generation": {
+        "samples": [
+          {
+            "prompt": "Write a two-sentence summary of why the sky appears blue.",
+            "response": "The sky appears blue because of Rayleigh scattering. This is when light is scattered by the molecules in the atmosphere. The blue light is scattered more than the other colors of light, which is why the sky appears blue.",
+            "n_generated": 45,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "List three practical tips for someone learning to cook.",
+            "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n\n2. Practice makes perfect. Practice is key to learning how to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. You can ask for advice from a friend, a family member, or a cooking instructor. They can help you to improve your skills and become a better cook.",
+            "n_generated": 161,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "What is the difference between a list and a tuple in Python?",
+            "response": "In Python, a list and a tuple are both used to store a collection of items. However, there are some key differences between the two:\n\n1. Mutability: Lists are mutable, which means that you can change the items in a list after it has been created. Tuples, on the other hand, are immutable, which means that you cannot change the items in a tuple after it has been created.\n\n2. Syntax: Lists are defined using square brackets, while tuples are defined using parentheses. \n\n3. Performance: Tuples are generally faster than lists because they are immutable. This means that they are more efficient when you need to store a collection of items that will not be changed.\n\n4. Use cases: Lists are often used when you need to store a collection of items that may be modified, such as a list of items in a shopping cart. Tuples are often used when you need to store a collection of items that will not be modified, such as the coordinates of a point in a game.",
+            "n_generated": 206,
+            "emitted_im_end": true,
+            "hit_cap": false
+          },
+          {
+            "prompt": "Write a short, friendly email declining a meeting invitation.",
+            "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for the same time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+            "n_generated": 76,
+            "emitted_im_end": true,
+            "hit_cap": false
+          }
+        ],
+        "mean_length": 122.0,
+        "max_length": 206,
+        "emitted_im_end": 4,
+        "hit_cap": 0
+      }
+    }
+  },
+  "settings": {
+    "eval_examples": 200,
+    "max_length": 1024,
+    "max_new_tokens": 256,
+    "include_diagnostic": true,
+    "out": "docs/phase6/e23_dpo_evaluation.json"
+  }
+}

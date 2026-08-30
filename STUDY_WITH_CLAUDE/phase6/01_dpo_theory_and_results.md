@@ -132,8 +132,8 @@ mode), and implicit reward **exactly 0** at initialisation with loss
 | **H1** | all β reduce loss below `log 2` | **NOT SUPPORTED** — logged losses drifted up, but they are single-pair noise (§7); the eval margins moved only for β ≥ 0.1 |
 | **H2** | SUM accuracy exceeds 47.2% for some β | **DISPROVED** — unchanged at 46.7% everywhere |
 | **H3** | KL monotone decreasing in β | **NOT SUPPORTED** — all three at 0.0008, indistinguishable |
-| **H4** | length increases for some β | **DISPROVED** — +2 tokens (1.02×) |
-| **H5** | SUM and MEAN may diverge | **NOT OBSERVED** — both unchanged |
+| **H4** | length increases for some β | **DISPROVED in the sweep** (+2%); **CONFIRMED post-hoc** (+30%) |
+| **H5** | SUM and MEAN may diverge | **NOT OBSERVED in the sweep**; observed post-hoc (SUM flat, MEAN +0.5p) |
 
 ### The direction *was* right
 
@@ -153,6 +153,62 @@ The mechanism works — the magnitude is the problem.
 This is a **training-budget** result, not evidence that DPO does not work: 116
 optimiser steps × 16 pairs = 1,856 pairs seen, at lr 5e-7. The paper uses batch
 64 with RMSprop at 1e-6.
+
+### The post-hoc diagnostic — NOT pre-registered
+
+One run at **10x the learning rate** (5e-6, beta=0.1, everything else
+identical), launched *after* the sweep's results were seen and labelled
+`[POST-HOC]` everywhere so it cannot displace the primary result:
+
+| | SUM | MEAN | reward acc | margin | gen len |
+|---|---:|---:|---:|---:|---:|
+| SFT baseline | 46.7% | 58.7% | - | 0.0000 | 93.8 |
+| beta=0.1, lr 5e-7 | 46.7% | 58.7% | 51.1% | +0.0041 | 96.0 |
+| **[POST-HOC] lr 5e-6** | **46.7%** | **59.2%** | **65.2%** | **+0.0700** | **122.0** |
+
+The policy moved **~49x further** (log pi(chosen) +0.9773 vs +0.0199), the
+margin grew **17x**, reward accuracy reached 65.2% - and **SUM accuracy still
+did not move a single pair**, while **generated length rose 30%**.
+
+**H4 is confirmed here**, having been disproved in the sweep. The length trap
+Phase 5 predicted appears exactly when training has enough signal to exploit it.
+
+---
+
+## 5b. Why SUM accuracy cannot move - the arithmetic
+
+**Measured on the evaluation set:**
+
+| | chosen | rejected |
+|---|---:|---:|
+| mean summed log-prob | -291.12 | -261.65 |
+| mean tokens | 271.7 | 242.2 |
+| **mean per-token log-prob** | **-1.0713** | **-1.0803** |
+
+**Per token, the chosen response is genuinely more likely.** The SUM comparison
+inverts that verdict purely because chosen carries 29.5 more tokens:
+
+```
+SUM gap (chosen - rejected)      = -29.47 nats
+explained by length alone        = -31.90 nats
+residual once length is removed  =  +2.43 nats   (chosen is BETTER)
+```
+
+> The 46.7% SUM baseline is a **length artifact ~29 nats deep**. MEAN removes
+> the length term and reports 58.7% - which is exactly the 11-point swing
+> Phase 5 measured on identical models and data.
+
+To flip the *average* pair under SUM, the policy must shift the gap by ~29
+nats:
+
+| run | relative movement | shortfall |
+|---|---:|---:|
+| beta=0.1, lr 5e-7 | +0.0405 nats | **728x short** |
+| [POST-HOC] lr 5e-6 | +0.7004 nats | **42x short** |
+
+Even the 10x run is 42x short. The primary metric is **dominated by a property
+of the data, not of the model** - the same lesson as Phase 3's masked loss,
+Phase 4's stop-token gap, and Phase 5's baseline swing.
 
 The pre-registration anticipated this outcome in §7: *"Training loss falls but
 SUM preference accuracy does not exceed 47.2% → DPO optimised its objective

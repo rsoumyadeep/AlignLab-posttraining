@@ -1,0 +1,349 @@
+{
+  "baseline": {
+    "chosen_tokens": 271.7391304347826,
+    "pairs": 184,
+    "policy_chosen_logp": -291.1196347319561,
+    "policy_rejected_logp": -261.65098386355066,
+    "preference_accuracy_mean": 0.5869565217391305,
+    "preference_accuracy_sum": 0.4673913043478261,
+    "rejected_tokens": 242.20652173913044,
+    "reward_accuracy": 0.0,
+    "reward_margin": 0.0
+  },
+  "beta": 0.01,
+  "dataset": {
+    "audits": {
+      "eval_raw": {
+        "chosen_chars_mean": 1334.144,
+        "chosen_longer_fraction": 0.564,
+        "empty_responses": 3,
+        "identical_responses": 12,
+        "inverted": 0,
+        "margin_mean": 1.81675,
+        "margin_median": 1.0,
+        "multi_turn": 0,
+        "notes": [
+          "13.6% of pairs are score TIES - the annotator rated both responses equally, yet the pair is used as a preference. Bradley-Terry assumes a genuine ordering.",
+          "12 pairs have IDENTICAL chosen and rejected text; their log-ratio is zero by construction. Filtered.",
+          "LENGTH BIAS: chosen is longer in 56.4% of pairs (mean 1334 vs 1129 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data."
+        ],
+        "prompt_prefix_mismatches": 0,
+        "rejected_chars_mean": 1129.1575,
+        "rows": 2000,
+        "tie_fraction": 0.136,
+        "ties": 272
+      },
+      "train_raw": {
+        "chosen_chars_mean": 1291.3983333333333,
+        "chosen_longer_fraction": 0.5583333333333333,
+        "empty_responses": 2,
+        "identical_responses": 14,
+        "inverted": 0,
+        "margin_mean": 1.8823333333333334,
+        "margin_median": 1.0,
+        "multi_turn": 0,
+        "notes": [
+          "11.9% of pairs are score TIES - the annotator rated both responses equally, yet the pair is used as a preference. Bradley-Terry assumes a genuine ordering.",
+          "14 pairs have IDENTICAL chosen and rejected text; their log-ratio is zero by construction. Filtered.",
+          "LENGTH BIAS: chosen is longer in 55.8% of pairs (mean 1291 vs 1132 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data."
+        ],
+        "prompt_prefix_mismatches": 0,
+        "rejected_chars_mean": 1132.3186666666666,
+        "rows": 3000,
+        "tie_fraction": 0.119,
+        "ties": 357
+      }
+    },
+    "drop_ties": false,
+    "eval_fingerprint": {
+      "n_chars": 690254,
+      "n_rows": 200,
+      "name": "HuggingFaceH4/ultrafeedback_binarized",
+      "revision": "main",
+      "sha256": "b3bc775a6db554cc757152219fc9ffb2f54a016c6dd69635847df970224a7748",
+      "split": "test_prefs"
+    },
+    "eval_rows": 200,
+    "eval_rows_raw": 2000,
+    "eval_split": "test_prefs",
+    "name": "HuggingFaceH4/ultrafeedback_binarized",
+    "revision": "main",
+    "seed": 42,
+    "train_fingerprint": {
+      "n_chars": 6689483,
+      "n_rows": 2000,
+      "name": "HuggingFaceH4/ultrafeedback_binarized",
+      "revision": "main",
+      "sha256": "1e48de32d0d5ece3b345948b8727cdfdc04236a3e934c04ebb35c28d9ba68c2c",
+      "split": "train_prefs"
+    },
+    "train_rows": 2000,
+    "train_rows_after_tie_drop": 61135,
+    "train_rows_raw": 61135,
+    "train_split": "train_prefs"
+  },
+  "disk_after": {
+    "free_bytes": 78685786112,
+    "free_gib": 73.282,
+    "path": "/data/home/rsoumyadeep/AlignLab/checkpoints",
+    "percent_used": 93.97,
+    "total_bytes": 7937302376448,
+    "total_gib": 7392.189,
+    "used_bytes": 7458521722880
+  },
+  "dtype": "torch.bfloat16",
+  "eval_dropped": 16,
+  "eval_pairs": 184,
+  "final": {
+    "chosen_tokens": 271.7391304347826,
+    "pairs": 184,
+    "policy_chosen_logp": -291.15094398933905,
+    "policy_rejected_logp": -261.66850813704986,
+    "preference_accuracy_mean": 0.5869565217391305,
+    "preference_accuracy_sum": 0.4673913043478261,
+    "rejected_tokens": 242.20652173913044,
+    "reward_accuracy": 0.5108695652173914,
+    "reward_margin": -0.00013784987648883228
+  },
+  "final_model_bytes": 3098893705,
+  "gradient_accumulation_steps": 16,
+  "history": [
+    {
+      "chosen_reward": 0.0018457031110301614,
+      "loss": 0.6939336061477661,
+      "lr": 2.0833333333333333e-07,
+      "rejected_reward": 0.003417816013097763,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0015721129020676017,
+      "step": 5
+    },
+    {
+      "chosen_reward": 0.0017169498605653644,
+      "loss": 0.6923971772193909,
+      "lr": 4.1666666666666667e-07,
+      "rejected_reward": 0.00021636961901094764,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.0015005802270025015,
+      "step": 10
+    },
+    {
+      "chosen_reward": 0.002979068784043193,
+      "loss": 0.6930736303329468,
+      "lr": 4.989741394042727e-07,
+      "rejected_reward": 0.002832031110301614,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.00014703767374157906,
+      "step": 15
+    },
+    {
+      "chosen_reward": 0.003397827036678791,
+      "loss": 0.6876724362373352,
+      "lr": 4.92735454356513e-07,
+      "rejected_reward": -0.007581786718219519,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.010979613289237022,
+      "step": 20
+    },
+    {
+      "chosen_reward": -0.0027388380840420723,
+      "loss": 0.6945404410362244,
+      "lr": 4.809698831278217e-07,
+      "rejected_reward": 4.57763671875e-05,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0027846144512295723,
+      "step": 25
+    },
+    {
+      "chosen_reward": 0.018599852919578552,
+      "loss": 0.6852101683616638,
+      "lr": 4.639453180753619e-07,
+      "rejected_reward": 0.0026623534504324198,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.015937499701976776,
+      "step": 30
+    },
+    {
+      "chosen_reward": -0.0036325263790786266,
+      "loss": 0.6921746134757996,
+      "lr": 4.420493945100701e-07,
+      "rejected_reward": -0.005578594282269478,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.0019460679031908512,
+      "step": 35
+    },
+    {
+      "chosen_reward": 0.002895202487707138,
+      "loss": 0.6901478171348572,
+      "lr": 4.157806645601988e-07,
+      "rejected_reward": -0.003112640231847763,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.006007842719554901,
+      "step": 40
+    },
+    {
+      "chosen_reward": 0.006317443680018187,
+      "loss": 0.6955363750457764,
+      "lr": 3.857372455503697e-07,
+      "rejected_reward": 0.011090087704360485,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0047726440243422985,
+      "step": 45
+    },
+    {
+      "chosen_reward": -0.00147161481436342,
+      "loss": 0.6928046941757202,
+      "lr": 3.5260320136318924e-07,
+      "rejected_reward": -0.002156753558665514,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.000685138744302094,
+      "step": 50
+    },
+    {
+      "chosen_reward": 0.0004261779831722379,
+      "loss": 0.6912719011306763,
+      "lr": 3.171329668685942e-07,
+      "rejected_reward": -0.0033280181232839823,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.003754196222871542,
+      "step": 55
+    },
+    {
+      "chosen_reward": -0.0016648482996970415,
+      "loss": 0.6942456364631653,
+      "lr": 2.801341700638307e-07,
+      "rejected_reward": 0.0005308914114721119,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0021957396529614925,
+      "step": 60
+    },
+    {
+      "chosen_reward": -0.0004107666027266532,
+      "loss": 0.6949269771575928,
+      "lr": 2.424492430497778e-07,
+      "rejected_reward": 0.003145751776173711,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0035565183497965336,
+      "step": 65
+    },
+    {
+      "chosen_reward": 0.0011163329472765326,
+      "loss": 0.6950942873954773,
+      "lr": 2.0493624054652355e-07,
+      "rejected_reward": 0.005006713792681694,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0038903807289898396,
+      "step": 70
+    },
+    {
+      "chosen_reward": -0.01448974572122097,
+      "loss": 0.7031629681587219,
+      "lr": 1.6844930269478273e-07,
+      "rejected_reward": 0.005442504771053791,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.019932251423597336,
+      "step": 75
+    },
+    {
+      "chosen_reward": 0.002387161133810878,
+      "loss": 0.6914892792701721,
+      "lr": 1.3381920698905784e-07,
+      "rejected_reward": -0.000931377406232059,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.003318538423627615,
+      "step": 80
+    },
+    {
+      "chosen_reward": 0.0017501830589026213,
+      "loss": 0.6924853324890137,
+      "lr": 1.0183445215899584e-07,
+      "rejected_reward": 0.0004260253917891532,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.0013241576962172985,
+      "step": 85
+    },
+    {
+      "chosen_reward": -0.0034815978724509478,
+      "loss": 0.7015452980995178,
+      "lr": 7.322330470336313e-08,
+      "rejected_reward": 0.01324462890625,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.01672622747719288,
+      "step": 90
+    },
+    {
+      "chosen_reward": 0.0007107543642632663,
+      "loss": 0.6997810006141663,
+      "lr": 4.863721686226349e-08,
+      "rejected_reward": 0.013934630900621414,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.013223876245319843,
+      "step": 95
+    },
+    {
+      "chosen_reward": -0.012093505822122097,
+      "loss": 0.7070505023002625,
+      "lr": 2.863599358669755e-08,
+      "rejected_reward": 0.015522460453212261,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.027615966275334358,
+      "step": 100
+    },
+    {
+      "chosen_reward": -0.006082611158490181,
+      "loss": 0.6963315010070801,
+      "lr": 1.3675046241339916e-08,
+      "rejected_reward": 0.0002758789050858468,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.0063584898598492146,
+      "step": 105
+    },
+    {
+      "chosen_reward": -0.0033815002534538507,
+      "loss": 0.6923925280570984,
+      "lr": 4.0950232632141205e-09,
+      "rejected_reward": -0.004891357384622097,
+      "reward_accuracy": 1.0,
+      "reward_margin": 0.0015098571311682463,
+      "step": 110
+    },
+    {
+      "chosen_reward": -0.004877929575741291,
+      "loss": 0.6981625556945801,
+      "lr": 1.1405387761664887e-10,
+      "rejected_reward": 0.005127868615090847,
+      "reward_accuracy": 0.0,
+      "reward_margin": -0.010005798190832138,
+      "step": 115
+    }
+  ],
+  "learning_rate": 5e-07,
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "model_revision": "8faed761d45a263340a0528343f099c05c9a4323",
+  "objective": "SUM",
+  "parameters": 1543714304,
+  "peak_vram_bytes": 19929745920,
+  "planned_steps": 116,
+  "policy_checkpoint": "/data/home/rsoumyadeep/AlignLab/checkpoints/sft-qwen1p5b-noRobots-001/final",
+  "prefix_violations": 0,
+  "reference_frozen": {
+    "first_trainable": [],
+    "frozen": true,
+    "n_trainable": 0,
+    "training_mode": false
+  },
+  "run_name": "dpo-beta0.01-sum",
+  "seed": 42,
+  "total_steps": 116,
+  "train_dropped": 131,
+  "train_pairs": 1869,
+  "train_runtime_s": 640.336348772049,
+  "trainable_parameters": 1543714304,
+  "zero_reward_at_init": {
+    "expected_loss": 0.6931471805599453,
+    "loss": 0.6931471824645996,
+    "loss_matches_log2": true,
+    "max_abs_chosen_reward": 0.0,
+    "max_abs_rejected_reward": 0.0,
+    "rewards_zero": true
+  }
+}
