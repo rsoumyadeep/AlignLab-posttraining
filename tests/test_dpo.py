@@ -272,3 +272,54 @@ class TestZeroRewardAtInit:
             policy, policy, wrong_reference, wrong_reference, beta=0.1
         )
         assert not report["rewards_zero"]
+
+
+class TestDPOConfigComposition:
+    """The Phase 6 config must encode the pre-registered decisions."""
+
+    @staticmethod
+    def _compose(overrides=None):
+        from hydra import compose, initialize_config_dir
+        from alignlab.config_schema import register_configs
+        from alignlab.dpo_train import CONFIG_DIR
+
+        register_configs()
+        with initialize_config_dir(config_dir=CONFIG_DIR, version_base=None):
+            return compose(config_name="dpo", overrides=overrides or [])
+
+    def test_composes_with_defaults(self):
+        cfg = self._compose()
+        assert cfg.model.id == "Qwen/Qwen2.5-1.5B"
+        assert cfg.sft_run_name == "sft-qwen1p5b-noRobots-001"
+
+    def test_objective_defaults_to_SUM_the_published_one(self):
+        """length_normalise=True would silently optimise a different objective."""
+        assert self._compose().dpo.length_normalise is False
+
+    def test_beta_default_is_the_preregistered_reference_point(self):
+        assert self._compose().dpo.beta == 0.1
+
+    def test_all_preregistered_betas_compose(self):
+        for beta in (0.01, 0.1, 0.5):
+            assert self._compose([f"dpo.beta={beta}"]).dpo.beta == pytest.approx(beta)
+
+    def test_ties_are_kept_unchanged_from_phase_5(self):
+        assert self._compose().drop_ties is False
+
+    def test_seed_is_unchanged_across_phases(self):
+        assert self._compose().reproducibility.seed == 42
+
+    def test_preference_splits_are_the_prefs_ones(self):
+        cfg = self._compose()
+        assert cfg.preference_train_split == "train_prefs"
+        assert cfg.preference_eval_split == "test_prefs"
+
+    def test_storage_guard_defaults_on(self):
+        assert self._compose().storage_guard is True
+
+    def test_smoke_profile_caps_steps(self):
+        assert self._compose(["dpo=smoke"]).dpo.max_steps == 8
+
+    def test_dpo_learning_rate_is_far_below_sft(self):
+        """DPO starts from a tuned model; 2e-5 would degrade it quickly."""
+        assert self._compose().dpo.learning_rate < 1e-5

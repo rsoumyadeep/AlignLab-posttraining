@@ -1,0 +1,39 @@
+# Phase 6 DPO hyperparameters.
+
+# PRE-REGISTERED candidate set: {0.01, 0.1, 0.5}. See
+# docs/phase6/BETA_PREREGISTRATION.md, committed BEFORE any DPO code existed.
+# 0.1 is the reference point (the community default).
+beta: 0.1
+
+# FALSE = SUM of token log-probabilities = the PUBLISHED DPO objective.
+# This is the primary objective for Phase 6 and is fixed by pre-registration.
+# TRUE would compute the length-normalised MEAN, which Phase 5 showed gives a
+# materially different answer (58.3% vs 47.2% preference baseline). It is a
+# DIAGNOSTIC, never the headline.
+length_normalise: false
+
+max_length: 1024
+
+# One pair per forward pass, with gradient accumulation to reach an effective
+# batch of 16. Chosen and rejected have different lengths; padding them
+# together would add masking machinery that obscures the loss this phase exists
+# to make legible. Throughput is not the objective here.
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 16
+
+# 5e-7 is the conventional DPO learning rate - roughly 40x lower than SFT's
+# 2e-5. DPO starts from an already-tuned model and a larger rate degrades it
+# quickly. This is convention, NOT a tuned value; no LR sweep was run.
+learning_rate: 5.0e-7
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+weight_decay: 0.0
+max_grad_norm: 1.0
+
+num_train_epochs: 1.0
+max_steps: -1
+
+logging_steps: 5
+eval_steps: 50
+seed: 42
+gradient_checkpointing: true

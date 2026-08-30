@@ -1,0 +1,48 @@
+# AlignLab Phase 6 - Direct Preference Optimization root configuration.
+#
+#   python -m alignlab.dpo_train env=server dpo.beta=0.1
+#   python -m alignlab.dpo_train env=server dpo=smoke
+#
+# The policy starts from the Phase 3 SFT checkpoint and the SAME checkpoint,
+# frozen, is the reference.
+
+defaults:
+  - _self_
+  - env: local
+  - model: qwen2_5_1_5b
+  - dpo: default
+  - logging: default
+  - tracking: noop
+  - override hydra/job_logging: none
+  - override hydra/hydra_logging: none
+
+run_name: ""
+experiment: dpo
+
+policy_checkpoint: ""
+sft_run_name: sft-qwen1p5b-noRobots-001
+
+# Phase 5's audited configuration, unchanged. Any change here changes the
+# dataset fingerprint, which the manifest records.
+preference_dataset: HuggingFaceH4/ultrafeedback_binarized
+preference_train_split: train_prefs
+preference_eval_split: test_prefs
+max_train: 2000
+max_eval: 200
+drop_ties: false
+
+reproducibility:
+  seed: 42
+  deterministic: false
+
+storage_guard: true
+allow_low_disk: false
+
+extras: {}
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false

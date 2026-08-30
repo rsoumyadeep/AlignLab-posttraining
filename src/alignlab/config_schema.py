@@ -237,6 +237,43 @@ class PeftConfigGroup:
 
 
 @dataclass
+class DPOHyperParams:
+    """Direct Preference Optimization hyperparameters.
+
+    ``length_normalise`` defaults to **False**, i.e. the SUM of token
+    log-probabilities. That is the published DPO objective, and Phase 6's
+    pre-registration fixes it as the primary one. The MEAN variant is a
+    DIAGNOSTIC; switching it here would silently optimise a different
+    objective under the same name - see Phase 5, where the two gave 47.2% and
+    58.3% on identical models and data.
+    """
+
+    # Pre-registered candidate set: {0.01, 0.1, 0.5}. See
+    # docs/phase6/BETA_PREREGISTRATION.md, committed before any DPO code.
+    beta: float = 0.1
+    length_normalise: bool = False
+
+    max_length: int = 1024
+    # One pair per forward, with gradient accumulation. The educational
+    # implementation avoids padding entirely: chosen and rejected have
+    # different lengths, and padding them together adds masking complexity
+    # that would obscure the loss this phase exists to make legible.
+    per_device_train_batch_size: int = 1
+    gradient_accumulation_steps: int = 16
+    learning_rate: float = 5.0e-7
+    lr_scheduler_type: str = "cosine"
+    warmup_ratio: float = 0.1
+    weight_decay: float = 0.0
+    max_grad_norm: float = 1.0
+    num_train_epochs: float = 1.0
+    max_steps: int = -1
+    logging_steps: int = 5
+    eval_steps: int = 50
+    seed: int = 42
+    gradient_checkpointing: bool = True
+
+
+@dataclass
 class AlignLabConfig:
     """Top-level configuration."""
 
@@ -252,6 +289,40 @@ class AlignLabConfig:
     # Run identification. Empty means "generate a timestamped name".
     run_name: str = ""
     experiment: str = "smoke"
+    extras: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class DPOExperimentConfig:
+    """Top-level configuration for the Phase 6 DPO entrypoint."""
+
+    env: EnvConfig = field(default_factory=EnvConfig)
+    model: ModelConfig = field(default_factory=ModelConfig)
+    dpo: DPOHyperParams = field(default_factory=DPOHyperParams)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
+    tracking: TrackingConfig = field(default_factory=TrackingConfig)
+    reproducibility: ReproducibilityConfig = field(
+        default_factory=ReproducibilityConfig
+    )
+
+    # The SFT checkpoint used as BOTH the policy start and the frozen
+    # reference. Empty means "resolve <checkpoint_root>/<sft_run_name>/final".
+    policy_checkpoint: str = ""
+    sft_run_name: str = "sft-qwen1p5b-noRobots-001"
+
+    # Preference data. Defaults mirror Phase 5's audited configuration; changing
+    # any of these changes the fingerprint, which is recorded in the manifest.
+    preference_dataset: str = "HuggingFaceH4/ultrafeedback_binarized"
+    preference_train_split: str = "train_prefs"
+    preference_eval_split: str = "test_prefs"
+    max_train: int | None = 2000
+    max_eval: int | None = 200
+    drop_ties: bool = False
+
+    run_name: str = ""
+    experiment: str = "dpo"
+    storage_guard: bool = True
+    allow_low_disk: bool = False
     extras: dict[str, Any] = field(default_factory=dict)
 
 
@@ -295,3 +366,4 @@ def register_configs() -> None:
     store = ConfigStore.instance()
     store.store(name="alignlab_schema", node=AlignLabConfig)
     store.store(name="alignlab_sft_schema", node=SFTExperimentConfig)
+    store.store(name="alignlab_dpo_schema", node=DPOExperimentConfig)

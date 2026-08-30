@@ -1,0 +1,18 @@
+# A deliberately tiny DPO run for wiring verification. NOT a meaningful
+# experiment: any result from this config must be labelled a smoke test.
+beta: 0.1
+length_normalise: false
+max_length: 512
+per_device_train_batch_size: 1
+gradient_accumulation_steps: 4
+learning_rate: 5.0e-7
+lr_scheduler_type: cosine
+warmup_ratio: 0.1
+weight_decay: 0.0
+max_grad_norm: 1.0
+num_train_epochs: 1.0
+max_steps: 8
+logging_steps: 1
+eval_steps: 4
+seed: 42
+gradient_checkpointing: true
