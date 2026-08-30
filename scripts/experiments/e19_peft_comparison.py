@@ -115,11 +115,62 @@ def load_model_for_eval(run_name: str, arm: str, ckpt_root: Path, device, dtype)
         BASE_MODEL, revision=REVISION, dtype=dtype
     )
     model = PeftModel.from_pretrained(base, final)
-    # MERGE for evaluation. Two reasons: it removes the adapter's runtime
-    # overhead so generation timings are comparable, and it exercises the merge
-    # path on a real trained adapter rather than only on E18's synthetic one.
-    model = model.merge_and_unload()
-    return model.to(device).eval(), "adapter (merged for eval)"
+    # DO NOT MERGE FOR EVALUATION.
+    #
+    # An earlier version of this script merged, on the reasoning that it removes
+    # adapter overhead and exercises the merge path. Measuring first showed that
+    # would have been a mistake: merging in bf16 is LOSSY. On this trained
+    # adapter, merged-vs-unmerged logits differ by max 5.625e-01 (mean 5.00e-02)
+    # in bf16, against 6.998e-05 (mean 4.70e-06) in float32 - roughly 8,000x
+    # worse. The cause is that ||dW||/||W|| is about 0.003 (E17), which sits at
+    # the resolution of bf16's ~8-bit mantissa, so most of the update rounds
+    # away when added to the much larger base weight.
+    #
+    # Evaluating the merged model would therefore measure the adapter PLUS a
+    # merge artefact, and attribute both to the training arm. The model as
+    # TRAINED is the unmerged one, so that is what gets evaluated. Merge
+    # precision is measured separately by measure_merge_precision().
+    return model.to(device).eval(), "adapter (unmerged)"
+
+
+def measure_merge_precision(run_name: str, ckpt_root: Path, device) -> dict | None:
+    """How much does merging cost, in bf16 versus float32?
+
+    LoRA's practical selling point is that the adapter can be folded into the
+    base weight for zero inference overhead. That claim is exact in float32 and
+    NOT exact in bf16, which is the dtype these models are actually served in.
+    Worth measuring rather than assuming.
+    """
+    final = ckpt_root / run_name / "final"
+    if not (final / "adapter_config.json").exists():
+        return None
+
+    from peft import PeftModel
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, revision=REVISION)
+    text = tokenizer.apply_chat_template(
+        [{"role": "user", "content": QUALITATIVE_PROMPTS[3]}],
+        tokenize=False, add_generation_prompt=True,
+    )
+    inputs = tokenizer(text, return_tensors="pt", add_special_tokens=False).to(device)
+
+    out = {}
+    for dtype, name in ((torch.bfloat16, "bfloat16"), (torch.float32, "float32")):
+        base = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL, revision=REVISION, dtype=dtype
+        ).to(device).eval()
+        model = PeftModel.from_pretrained(base, final)
+        with torch.no_grad():
+            unmerged = model(**inputs).logits.float().clone()
+        merged_model = model.merge_and_unload().eval()
+        with torch.no_grad():
+            merged = merged_model(**inputs).logits.float()
+        diff = (unmerged - merged).abs()
+        out[name] = {"max": float(diff.max()), "mean": float(diff.mean())}
+        del base, model, merged_model
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+    return out
 
 
 def completion_nll(model, tokenizer, dataset, device, limit: int) -> tuple[float, int]:
@@ -374,6 +425,7 @@ def main() -> int:
         "dataset_controlled": bool(controlled),
         "hypotheses": {"H1": h1, "H2": h2, "H3": h3, "H4": h4},
         "evaluation": evaluation,
+        "merge_precision": merge_precision,
     }
     out = repo_root() / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
