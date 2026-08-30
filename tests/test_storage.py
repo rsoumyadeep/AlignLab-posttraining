@@ -28,9 +28,15 @@ from alignlab.storage import (
     require_free_space_for_checkpoints,
 )
 
-# Qwen2.5-1.5B, computed from the config in Phase 2 and confirmed against the
-# model card's "1.54B".
-QWEN_PARAMS = 1_543_656_960
+# Qwen2.5-1.5B, MEASURED from the real checkpoint by
+# scripts/experiments/e11_weights_reconciliation.py.
+#
+# This constant previously held 1,543,656,960 - Phase 2's config-only estimate,
+# which omitted the 28 x 2048 attention QKV bias parameters. E11 falsified that
+# number against the downloaded weights. The wrong value survived here until
+# the storage estimates were checked against a real checkpoint file and came up
+# 57,344 params short, which is the same error propagating one file further.
+QWEN_PARAMS = 1_543_714_304
 
 
 class TestEstimates:
@@ -187,3 +193,53 @@ class TestCheckpointGuard:
         one = est(QWEN_PARAMS) * 2
         three = est(QWEN_PARAMS) * 4
         assert three > one
+
+
+class TestEstimateAgainstMeasurement:
+    """The estimator versus a checkpoint that was actually written.
+
+    Measured on csrslave, 2026-08-30, from a real TRL/transformers bf16 run:
+        model.safetensors  3,087,467,144 B
+        optimizer.pt       6,175,148,456 B
+        total              9,262,615,600 B  (8.63 GiB, 6.00 bytes/param)
+    """
+
+    MEASURED_TOTAL = 9_262_615_600
+    MEASURED_MODEL = 3_087_467_144
+    MEASURED_OPTIMIZER = 6_175_148_456
+
+    def test_measured_checkpoint_is_six_bytes_per_param(self):
+        assert self.MEASURED_TOTAL / QWEN_PARAMS == pytest.approx(6.0, abs=0.01)
+
+    def test_bf16_params_account_for_the_model_file(self):
+        """2 bytes/param, to within the safetensors header (~38 KB, 0.001%)."""
+        estimate = estimate_checkpoint_bytes(QWEN_PARAMS, "bfloat16", optimizer=None)
+        overhead = self.MEASURED_MODEL - estimate
+        assert 0 < overhead < 100_000, f"unexpected overhead {overhead}"
+
+    def test_bf16_optimizer_states_account_for_the_optimizer_file(self):
+        """AdamW's two moments in bf16 = 4 bytes/param, to within pickle overhead.
+
+        This is the finding that explains the 2.33x over-estimate: the moments
+        are stored in bf16, not fp32, and no fp32 master copy is written.
+        """
+        estimate = 4 * QWEN_PARAMS
+        overhead = self.MEASURED_OPTIMIZER - estimate
+        assert 0 < overhead < 1_000_000, f"unexpected overhead {overhead}"
+
+    def test_tuned_estimate_matches_the_measurement_to_within_overhead(self):
+        tuned = estimate_checkpoint_bytes(
+            QWEN_PARAMS,
+            "bfloat16",
+            "adamw",
+            master_weights=False,
+            optimizer_state_dtype="bfloat16",
+        )
+        assert tuned == pytest.approx(self.MEASURED_TOTAL, rel=1e-4)
+        assert tuned <= self.MEASURED_TOTAL  # container overhead is not modelled
+
+    def test_default_over_predicts_and_that_is_the_safe_direction(self):
+        """A disk guard must never under-predict; 2.3x high is acceptable."""
+        default = estimate_checkpoint_bytes(QWEN_PARAMS)
+        assert default > self.MEASURED_TOTAL
+        assert default / self.MEASURED_TOTAL == pytest.approx(2.33, abs=0.05)

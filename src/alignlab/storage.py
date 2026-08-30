@@ -129,11 +129,32 @@ def estimate_checkpoint_bytes(
     param_dtype: str = "bfloat16",
     optimizer: str | None = "adamw",
     master_weights: bool = True,
+    optimizer_state_dtype: str = "float32",
 ) -> int:
     """Estimate one full-parameter checkpoint on disk, in bytes.
 
     This is ARITHMETIC, not a measurement. It is deliberately conservative:
     where a framework might or might not write a tensor, it is counted.
+
+    HOW THE DEFAULT COMPARES TO REALITY - MEASURED, 2026-08-30. A real
+    Qwen2.5-1.5B checkpoint written by TRL/transformers with bf16=True was:
+
+        model.safetensors   3,087,467,144 B   = 2.00 bytes/param  (bf16)
+        optimizer.pt        6,175,148,456 B   = 4.00 bytes/param
+        total               9,262,615,600 B   = 6.00 bytes/param  = 8.63 GiB
+
+    The default estimate for the same model is 20.13 GiB (14 bytes/param). It
+    over-predicts by 2.33x, because the default assumes fp32 AdamW moments
+    (8 bytes) plus an fp32 master copy (4 bytes), while this configuration
+    stores both moments in bf16 (4 bytes total) and keeps no separate master
+    copy - pure bf16 training rather than mixed precision with fp32 masters.
+
+    THE OVER-PREDICTION IS KEPT AS THE DEFAULT ON PURPOSE. A disk guard that
+    under-predicts fails halfway through writing a 9 GiB file on a shared
+    volume; one that over-predicts refuses a run that would have fitted. Those
+    are not symmetric costs. Callers who have MEASURED their own configuration
+    can pass ``optimizer_state_dtype="bfloat16"`` and ``master_weights=False``
+    to get the tighter figure.
 
     Args:
         n_params: trainable parameter count.
@@ -154,12 +175,14 @@ def estimate_checkpoint_bytes(
 
     per_param = float(DTYPE_BYTES.get(param_dtype, 4))
 
+    state_bytes = float(DTYPE_BYTES.get(optimizer_state_dtype, 4))
+
     if optimizer is None:
         opt_per_param = 0.0
     elif optimizer.lower() in ("adamw", "adam"):
-        opt_per_param = 8.0  # exp_avg + exp_avg_sq, both fp32
+        opt_per_param = 2 * state_bytes  # exp_avg + exp_avg_sq
     elif optimizer.lower() == "sgd":
-        opt_per_param = 4.0  # momentum buffer, fp32
+        opt_per_param = state_bytes  # momentum buffer
     else:
         raise ValueError(f"unknown optimizer {optimizer!r}")
 
