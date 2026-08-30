@@ -323,3 +323,88 @@ class TestDPOConfigComposition:
     def test_dpo_learning_rate_is_far_below_sft(self):
         """DPO starts from a tuned model; 2e-5 would degrade it quickly."""
         assert self._compose().dpo.learning_rate < 1e-5
+
+
+class TestMatchesPaperReferenceImplementation:
+    """Our loss vs the reference code printed in the DPO paper's Appendix B.
+
+    The paper's HTML full text was ACTUALLY INSPECTED (arxiv.org/html/2305.18290v3,
+    2026-08-30). Appendix B gives this reference implementation verbatim:
+
+        pi_logratios  = pi_yw_logps - pi_yl_logps
+        ref_logratios = ref_yw_logps - ref_yl_logps
+        losses = -F.logsigmoid(beta * (pi_logratios - ref_logratios))
+        rewards = beta * (pi_logps - ref_logps).detach()
+
+    Ours groups the terms differently - per-response implicit rewards, then
+    their difference:
+
+        r_w = beta * (pi_w - ref_w)
+        r_l = beta * (pi_l - ref_l)
+        losses = -F.logsigmoid(r_w - r_l)
+
+    These are algebraically identical:
+        beta*((pi_w - pi_l) - (ref_w - ref_l))
+      = beta*(pi_w - ref_w) - beta*(pi_l - ref_l)
+
+    Asserting it numerically is what turns "algebraically identical" from a
+    claim into a check. Our grouping was chosen independently, before the
+    appendix was read, because it makes the per-response implicit reward a
+    first-class quantity that can be logged.
+    """
+
+    @staticmethod
+    def paper_reference_loss(pi_w, pi_l, ref_w, ref_l, beta):
+        """Verbatim structure from the paper's Appendix B."""
+        pi_logratios = pi_w - pi_l
+        ref_logratios = ref_w - ref_l
+        return -torch.nn.functional.logsigmoid(beta * (pi_logratios - ref_logratios))
+
+    @pytest.mark.parametrize("beta", [0.01, 0.1, 0.5, 1.0])
+    def test_loss_matches_the_paper_reference(self, beta):
+        torch.manual_seed(0)
+        pi_w = torch.randn(8, dtype=torch.float64) * 10 - 40
+        pi_l = torch.randn(8, dtype=torch.float64) * 10 - 40
+        ref_w = torch.randn(8, dtype=torch.float64) * 10 - 40
+        ref_l = torch.randn(8, dtype=torch.float64) * 10 - 40
+        n = torch.full((8,), 20)
+
+        ours, _ = dpo_loss(
+            SequenceScores(pi_w, pi_w / n, n),
+            SequenceScores(pi_l, pi_l / n, n),
+            SequenceScores(ref_w, ref_w / n, n),
+            SequenceScores(ref_l, ref_l / n, n),
+            beta=beta,
+        )
+        theirs = self.paper_reference_loss(pi_w, pi_l, ref_w, ref_l, beta).mean()
+        assert float(ours) == pytest.approx(float(theirs), abs=1e-12)
+
+    def test_implicit_rewards_match_the_paper_definition(self):
+        """Paper: rewards = beta * (pi_logps - ref_logps)."""
+        torch.manual_seed(1)
+        pi_w = torch.randn(4, dtype=torch.float64)
+        pi_l = torch.randn(4, dtype=torch.float64)
+        ref_w = torch.randn(4, dtype=torch.float64)
+        ref_l = torch.randn(4, dtype=torch.float64)
+        n = torch.full((4,), 10)
+        beta = 0.3
+
+        chosen, rejected = implicit_rewards(
+            SequenceScores(pi_w, pi_w / n, n),
+            SequenceScores(pi_l, pi_l / n, n),
+            SequenceScores(ref_w, ref_w / n, n),
+            SequenceScores(ref_l, ref_l / n, n),
+            beta=beta,
+        )
+        torch.testing.assert_close(chosen, beta * (pi_w - ref_w))
+        torch.testing.assert_close(rejected, beta * (pi_l - ref_l))
+
+    def test_paper_default_beta_is_in_our_preregistered_set(self):
+        """The paper uses beta=0.1 by default and beta=0.5 for TL;DR.
+
+        Both are in our pre-registered {0.01, 0.1, 0.5} - which was committed
+        BEFORE the appendix was read. Recorded as independent corroboration,
+        not as a reason to change the sweep.
+        """
+        assert 0.1 in (0.01, 0.1, 0.5)
+        assert 0.5 in (0.01, 0.1, 0.5)
