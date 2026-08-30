@@ -1,0 +1,41 @@
+# A fast pass for wiring verification. NOT a meaningful evaluation: sample
+# sizes this small cannot resolve anything, and the dashboard will say so.
+base_model: Qwen/Qwen2.5-1.5B
+base_revision: 8faed761d45a263340a0528343f099c05c9a4323
+
+models:
+  - {name: "base", checkpoint: base}
+  - {name: "SFT",  checkpoint: sft-qwen1p5b-noRobots-001}
+
+comparisons:
+  - {baseline: "base", candidate: "SFT"}
+
+perplexity:
+  enabled: true
+  dataset: HuggingFaceH4/no_robots
+  split: test
+  max_examples: 20
+  max_length: 512
+
+preference:
+  enabled: true
+  dataset: HuggingFaceH4/ultrafeedback_binarized
+  split: test_prefs
+  max_examples: 20
+  max_length: 512
+
+generation:
+  enabled: true
+  max_new_tokens: 96
+  do_sample: false
+  temperature: null
+  top_k: null
+  top_p: null
+  seed: 42
+
+judge:
+  enabled: false
+  model: Qwen/Qwen2.5-7B-Instruct
+  revision: main
+  seed: 42
+  comparisons: []

@@ -1,0 +1,69 @@
+# The full Phase 7 evaluation pass.
+
+# Base model identity, used for the tokenizer and as the untrained reference
+# point. PINNED, as everywhere else in this project.
+base_model: Qwen/Qwen2.5-1.5B
+base_revision: 8faed761d45a263340a0528343f099c05c9a4323
+
+# Models to evaluate. Each entry is {name, checkpoint}; "checkpoint: base"
+# means the pinned pretrained model. Adding a model here is the ONLY change
+# needed to include it - nothing is hard-coded in the entrypoint.
+models:
+  - {name: "base",        checkpoint: base}
+  - {name: "SFT",         checkpoint: sft-qwen1p5b-noRobots-001}
+  - {name: "LoRA r=16",   checkpoint: lora-r16-lr2e-4-001}
+  - {name: "QLoRA r=16",  checkpoint: qlora-r16-lr2e-4-001}
+  - {name: "DPO b=0.1",   checkpoint: dpo-beta0.1-sum}
+
+# Pairwise comparisons to compute. Not every metric applies to every pair;
+# the dashboard marks each APPLICABLE / NOT_APPLICABLE / NOT_MEASURED.
+comparisons:
+  - {baseline: "base",  candidate: "SFT"}
+  - {baseline: "SFT",   candidate: "LoRA r=16"}
+  - {baseline: "SFT",   candidate: "QLoRA r=16"}
+  - {baseline: "SFT",   candidate: "DPO b=0.1"}
+
+# --- language-modelling metrics -------------------------------------------
+perplexity:
+  enabled: true
+  # no_robots test split - the data SFT was trained on, so this is
+  # IN-DISTRIBUTION and measures fit to that distribution, not general quality.
+  dataset: HuggingFaceH4/no_robots
+  split: test
+  max_examples: 150
+  max_length: 1024
+
+# --- preference metrics ----------------------------------------------------
+preference:
+  enabled: true
+  dataset: HuggingFaceH4/ultrafeedback_binarized
+  split: test_prefs
+  max_examples: 200
+  max_length: 1024
+
+# --- generation ------------------------------------------------------------
+generation:
+  enabled: true
+  max_new_tokens: 256
+  # GREEDY. A comparison between two models should depend on their weights,
+  # not on sampling noise. Set do_sample true only for a deliberate
+  # variance study, and record it.
+  do_sample: false
+  temperature: null
+  top_k: null
+  top_p: null
+  seed: 42
+
+# --- LLM-as-judge ----------------------------------------------------------
+judge:
+  enabled: true
+  # ~4.5x the size of the models being judged. Still small by frontier
+  # standards, and from the SAME family as the models under test - a known
+  # bias risk, recorded in every result the judge produces.
+  model: Qwen/Qwen2.5-7B-Instruct
+  revision: main
+  seed: 42
+  # Which pairs to judge. Each is (baseline, candidate).
+  comparisons:
+    - {baseline: "base", candidate: "SFT"}
+    - {baseline: "SFT",  candidate: "DPO b=0.1"}

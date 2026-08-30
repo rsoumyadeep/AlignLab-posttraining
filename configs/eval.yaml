@@ -1,0 +1,30 @@
+# AlignLab Phase 7 - evaluation subsystem root configuration.
+#
+#   python -m alignlab.evaluate env=server
+#   python -m alignlab.evaluate env=server eval=quick
+#   python -m alignlab.evaluate env=server eval.judge.enabled=false
+#
+# Configuration-driven by design: the model set, dataset, prompt set, generation
+# settings and judge are all config, never hard-coded.
+
+defaults:
+  - _self_
+  - env: local
+  - eval: default
+  - logging: default
+  - override hydra/job_logging: none
+  - override hydra/hydra_logging: none
+
+run_name: ""
+experiment: eval
+
+reproducibility:
+  seed: 42
+  deterministic: false
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false
