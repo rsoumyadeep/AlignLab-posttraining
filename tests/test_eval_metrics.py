@@ -439,3 +439,28 @@ class TestProvenanceFingerprints:
         b = _fingerprint_record(self._section(), pref)
         assert a["dataset"] != b["dataset"]
         assert a["sha256"] != b["sha256"]
+
+
+class TestDashboardTextIsPortable:
+    """Phase 6 lesson, locked down: print() under Windows cp1252 raises on
+    non-ASCII, and evaluate.py prints the rendered dashboard to stdout."""
+
+    def test_rendered_dashboard_is_ascii(self):
+        from alignlab.evals.report import Dashboard, render_text
+
+        dashboard = Dashboard(
+            created_at="2026-08-30T00:00:00+00:00",
+            protocol={"dataset": "x", "judge_model": "y", "n_preference_pairs": 1},
+            lessons=["a lesson"],
+        )
+        render_text(dashboard).encode("ascii")
+
+    def test_the_committed_phase7_dashboard_is_ascii(self):
+        """The artefact that was actually printed, not just a synthetic one."""
+        from pathlib import Path
+
+        path = Path(__file__).resolve().parents[1] / "docs" / "phase7" / \
+            "eval-full-001_dashboard.txt"
+        if not path.is_file():
+            pytest.skip("phase 7 dashboard evidence not present")
+        path.read_text(encoding="utf-8").encode("ascii")
