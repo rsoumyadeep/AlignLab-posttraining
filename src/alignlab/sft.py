@@ -315,6 +315,31 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
     )
 
     # --------------------------------------------------------------- training
+    #
+    # TRANSFORMERS 5.x MIGRATION FINDING. `warmup_ratio` no longer exists on
+    # TrainingArguments/SFTConfig - only `warmup_steps` does. Passing it raises
+    # TypeError: unexpected keyword argument 'warmup_ratio'. We keep the ratio
+    # as AlignLab's knob because it is the portable one (it means the same
+    # thing when the dataset size changes) and convert it here, which also
+    # makes the resulting step count visible in the log instead of implicit.
+    steps_per_epoch = max(
+        1,
+        len(train_ds)
+        // (cfg.sft.per_device_train_batch_size * cfg.sft.gradient_accumulation_steps),
+    )
+    total_steps = (
+        cfg.sft.max_steps
+        if cfg.sft.max_steps and cfg.sft.max_steps > 0
+        else int(steps_per_epoch * cfg.sft.num_train_epochs)
+    )
+    warmup_steps = int(round(cfg.sft.warmup_ratio * total_steps))
+    logger.info(
+        "Schedule: %d steps/epoch, %d total optimiser steps, warmup %d "
+        "(ratio %.3f), effective batch %d sequences",
+        steps_per_epoch, total_steps, warmup_steps, cfg.sft.warmup_ratio,
+        cfg.sft.per_device_train_batch_size * cfg.sft.gradient_accumulation_steps,
+    )
+
     sft_args = SFTConfig(
         output_dir=str(ckpt_dir),
         max_length=cfg.sft.max_length,
@@ -325,7 +350,7 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
         gradient_accumulation_steps=cfg.sft.gradient_accumulation_steps,
         learning_rate=cfg.sft.learning_rate,
         lr_scheduler_type=cfg.sft.lr_scheduler_type,
-        warmup_ratio=cfg.sft.warmup_ratio,
+        warmup_steps=warmup_steps,
         weight_decay=cfg.sft.weight_decay,
         max_grad_norm=cfg.sft.max_grad_norm,
         num_train_epochs=cfg.sft.num_train_epochs,
@@ -342,7 +367,6 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
         gradient_checkpointing=cfg.model.gradient_checkpointing,
         dataloader_num_workers=cfg.env.num_workers,
         report_to=[],  # AlignLab owns tracking; see alignlab.tracking
-        logging_dir=str(directory / "hf_logs"),
     )
 
     trainer = SFTTrainer(
