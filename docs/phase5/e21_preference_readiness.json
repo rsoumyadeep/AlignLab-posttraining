@@ -1,0 +1,111 @@
+{
+  "dataset": {
+    "name": "HuggingFaceH4/ultrafeedback_binarized",
+    "revision": "main",
+    "train_split": "train_prefs",
+    "eval_split": "test_prefs",
+    "seed": 42,
+    "drop_ties": false,
+    "train_rows_raw": 61135,
+    "train_rows_after_tie_drop": 61135,
+    "train_rows": 2000,
+    "eval_rows_raw": 2000,
+    "eval_rows": 500,
+    "audits": {
+      "train_raw": {
+        "rows": 3000,
+        "ties": 357,
+        "inverted": 0,
+        "identical_responses": 14,
+        "empty_responses": 2,
+        "prompt_prefix_mismatches": 0,
+        "multi_turn": 0,
+        "margin_mean": 1.8823333333333334,
+        "margin_median": 1.0,
+        "chosen_chars_mean": 1291.3983333333333,
+        "rejected_chars_mean": 1132.3186666666666,
+        "chosen_longer_fraction": 0.5583333333333333,
+        "notes": [
+          "11.9% of pairs are score TIES - the annotator rated both responses equally, yet the pair is used as a preference. Bradley-Terry assumes a genuine ordering.",
+          "14 pairs have IDENTICAL chosen and rejected text; their log-ratio is zero by construction. Filtered.",
+          "LENGTH BIAS: chosen is longer in 55.8% of pairs (mean 1291 vs 1132 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data."
+        ],
+        "tie_fraction": 0.119
+      },
+      "eval_raw": {
+        "rows": 2000,
+        "ties": 272,
+        "inverted": 0,
+        "identical_responses": 12,
+        "empty_responses": 3,
+        "prompt_prefix_mismatches": 0,
+        "multi_turn": 0,
+        "margin_mean": 1.81675,
+        "margin_median": 1.0,
+        "chosen_chars_mean": 1334.144,
+        "rejected_chars_mean": 1129.1575,
+        "chosen_longer_fraction": 0.564,
+        "notes": [
+          "13.6% of pairs are score TIES - the annotator rated both responses equally, yet the pair is used as a preference. Bradley-Terry assumes a genuine ordering.",
+          "12 pairs have IDENTICAL chosen and rejected text; their log-ratio is zero by construction. Filtered.",
+          "LENGTH BIAS: chosen is longer in 56.4% of pairs (mean 1334 vs 1129 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data."
+        ],
+        "tie_fraction": 0.136
+      }
+    },
+    "train_fingerprint": {
+      "name": "HuggingFaceH4/ultrafeedback_binarized",
+      "split": "train_prefs",
+      "revision": "main",
+      "n_rows": 2000,
+      "n_chars": 6689483,
+      "sha256": "1e48de32d0d5ece3b345948b8727cdfdc04236a3e934c04ebb35c28d9ba68c2c"
+    },
+    "eval_fingerprint": {
+      "name": "HuggingFaceH4/ultrafeedback_binarized",
+      "split": "test_prefs",
+      "revision": "main",
+      "n_rows": 500,
+      "n_chars": 1704741,
+      "sha256": "a84516e89aa3015fec1d22c042c1b8d4e17e16e8965d3547ed623889ca4e14f8"
+    }
+  },
+  "post_filter_audit": {
+    "rows": 2000,
+    "ties": 0,
+    "inverted": 0,
+    "identical_responses": 0,
+    "empty_responses": 0,
+    "prompt_prefix_mismatches": 0,
+    "multi_turn": 0,
+    "margin_mean": 0.0,
+    "margin_median": 0.0,
+    "chosen_chars_mean": 1305.4155,
+    "rejected_chars_mean": 1113.8375,
+    "chosen_longer_fraction": 0.5675,
+    "notes": [
+      "LENGTH BIAS: chosen is longer in 56.8% of pairs (mean 1305 vs 1114 chars). A preference-trained model can learn 'be longer' rather than 'be better'. This cannot be filtered away - it is a property of the data."
+    ],
+    "tie_fraction": 0.0
+  },
+  "token_stats": {
+    "sampled": 400,
+    "prompt_tokens_mean": 175.9675,
+    "chosen_tokens_mean": 283.74,
+    "rejected_tokens_mean": 241.6125,
+    "chosen_longer_fraction_tokens": 0.565,
+    "over_max_length": 26,
+    "max_length": 1024
+  },
+  "prefix_violations": {
+    "chosen": [],
+    "rejected": []
+  },
+  "hypotheses": {
+    "H1 chosen/rejected share the prompt": true,
+    "H2 prompt is a token-prefix of both": true,
+    "H3 length bias present in tokens": true,
+    "H4 loading is reproducible": true
+  },
+  "ready": true
+}

@@ -45,7 +45,7 @@ No LoRA, no QLoRA, no DPO yet.
 | 2 — Transformer understanding | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 3 — SFT | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 4 — PEFT (LoRA / QLoRA) | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
-| 5 — Preference learning / RLHF | ⬜ not started |
+| 5 — Preference learning / RLHF | ✅ **COMPLETE** (infra/measurements/docs); PPO conceptual only |
 | 6 — DPO | ⬜ not started |
 | 7 — Evaluation | ⬜ skeleton only |
 | 8 — Engineering polish | ⬜ not started |
@@ -88,7 +88,7 @@ uv venv --python 3.11 .venv
 uv pip install -e ".[tracking,dev]"          # local: CPU torch
 
 python scripts/env_report.py          # what this machine actually has
-python -m pytest -q                   # 403 passed, 2 skipped
+python -m pytest -q                   # 458 passed, 2 skipped
 python -m alignlab.train              # foundation smoke run (toy model)
 ```
 
@@ -121,7 +121,7 @@ uv venv --python 3.11 .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install \n    --index-url https://download.pytorch.org/whl/cu124 torch
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -e ".[tracking,dev]"
 
-.venv/bin/python -m pytest -q                       # 404 passed, 1 skipped
+.venv/bin/python -m pytest -q                       # 459 passed, 1 skipped
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python -m alignlab.train env=server
 ```
 
@@ -137,14 +137,17 @@ src/alignlab/       foundation modules (see CODE_EXPLANATION/phase1/)
 src/alignlab/models/ Transformer components, Phase 2 (attention x3, RoPE/ALiBi,
                      RMSNorm, SwiGLU, decoder-only model, KV cache, decoding)
 src/alignlab/lora.py first-principles LoRA (Phase 4), verified against peft
+src/alignlab/preference.py  preference data + Bradley-Terry (Phase 5)
+src/alignlab/logprobs.py    sequence log-probs, KL - the DPO/PPO arithmetic
 src/alignlab/sft.py  SFT/LoRA/QLoRA entrypoint with three pre-flight audits
 configs/            Hydra tree; env/ group absorbs machine differences
-tests/              405 tests; no network or credentials needed
+tests/              460 tests; no network or credentials needed
 scripts/            env_report.py, server_probe.sh (executed on csrslave)
 docs/phase1/        phase reports, storage policy, server probe evidence
 docs/phase2/        Phase 2 report + verbatim GPU experiment output
 docs/phase3/        Phase 3 report, weight-download evidence, before/after eval
 docs/phase4/        Phase 4 report, bitsandbytes verification, SVD rank analysis
+docs/phase5/        Phase 5 report, preference-data readiness, KL measurements
 
 STUDY_WITH_CLAUDE/  theory, intuition, derivations + USER checkpoints
 CODE_EXPLANATION/   what the code actually does (never imagined code)
