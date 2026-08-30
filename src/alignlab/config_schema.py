@@ -141,8 +141,8 @@ class DataConfig:
 
     name: str = "HuggingFaceH4/no_robots"
     revision: str = "main"
-    train_split: str = "train_sft"
-    eval_split: str = "test_sft"
+    train_split: str = "train"
+    eval_split: str = "test"
     # None means "use the whole split". Subsampling is shuffled with the
     # global seed, never head-truncated - no_robots is grouped by category, so
     # taking the first N rows would silently bias the task mix.

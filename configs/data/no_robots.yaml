@@ -8,8 +8,12 @@
 name: HuggingFaceH4/no_robots
 revision: main
 
-train_split: train_sft
-eval_split: test_sft
+# VERIFIED against the live builder, not assumed. The repository also contains
+# train_sft-*.parquet / test_sft-*.parquet files, but the "default" config
+# exposes the splits as plain train (9,500 rows) and test (500). Guessing
+# "train_sft" from the filenames is exactly what failed on the first run.
+train_split: train
+eval_split: test
 
 # null means "the whole split". Subsampling is SHUFFLED with the global seed,
 # never head-truncated: no_robots is grouped by category, so select(range(N))

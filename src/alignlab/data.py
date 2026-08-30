@@ -139,16 +139,30 @@ def to_prompt_completion(example: dict[str, Any]) -> dict[str, Any]:
 
     WHY THE LAST TURN ONLY. A multi-turn conversation could be expanded into
     one training example per assistant turn, which uses the data more fully.
-    We deliberately do not: with prompt/completion, the boundary between
-    masked and unmasked tokens is a single index, which is what makes the loss
-    mask verifiable by hand in e12. Multi-turn training is the job of
-    ``assistant_only_loss``, which is measured as a separate arm rather than
-    assumed equivalent. Using the data fully is worth less than knowing
-    exactly which tokens carry gradient.
+    We deliberately do not: with prompt/completion the boundary between masked
+    and unmasked tokens is a SINGLE INDEX, which is what makes the loss mask
+    verifiable by hand (e12, arm A). Using the data fully is worth less than
+    knowing exactly which tokens carry gradient.
+
+    WHAT THIS COSTS, MEASURED rather than hand-waved. In no_robots' first 2000
+    training rows the turn-count distribution is 1840 two-turn conversations
+    and 160 longer ones (7, 9, 5, 8 and 6 turns) - so ~92% of examples are
+    already single-turn and lose nothing at all. For the remaining ~8% the
+    earlier assistant turns become context instead of targets.
+
+    THE ALTERNATIVE IS CURRENTLY UNAVAILABLE, not merely unchosen. TRL's
+    ``assistant_only_loss=True`` would train every assistant turn, but it
+    requires a chat template carrying ``{% generation %}`` markers, and
+    Qwen2.5's stock template does not have them - TRL rejects it with "The
+    chat template is not training-compatible". Recorded in e12 arm C as NOT
+    TESTED; enabling it needs a custom template and is deferred.
 
     Rows whose final turn is not from the assistant are returned with an empty
     completion so the caller can filter them; silently training on a user turn
     as if it were a target would be a data bug that no loss curve would reveal.
+    (Measured: 2000/2000 sampled rows do end with an assistant turn, so this
+    guard is expected to fire rarely - which is not a reason to omit it.)
+
     """
     messages = example.get("messages") or []
     if len(messages) < 2 or messages[-1].get("role") != "assistant":
@@ -172,8 +186,8 @@ def is_wellformed(example: dict[str, Any]) -> bool:
 def load_instruction_dataset(
     name: str = DEFAULT_DATASET,
     revision: str = DEFAULT_DATASET_REVISION,
-    train_split: str = "train_sft",
-    eval_split: str = "test_sft",
+    train_split: str = "train",
+    eval_split: str = "test",
     max_train: int | None = None,
     max_eval: int | None = None,
     seed: int = 42,
