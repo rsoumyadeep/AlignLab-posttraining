@@ -22,6 +22,7 @@ rather than silently inheriting a default that would fill a root partition.
 from __future__ import annotations
 
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -154,8 +155,32 @@ def configure_hf_cache(root: str | Path | None = None) -> dict[str, str]:
     An already-set variable is respected rather than overwritten: an operator
     who exported HF_HUB_CACHE deliberately outranks our config.
 
+    **Setting the environment variable is not sufficient.** ``huggingface_hub``
+    reads HF_HUB_CACHE once, at import, into ``huggingface_hub.constants``, and
+    every later download resolves against that frozen value. Any entrypoint
+    that imports ``transformers`` before calling this function was therefore
+    calling a no-op, and its downloads went to ``~/.cache/huggingface`` no
+    matter what the config said.
+
+    That is measured, not theorised. Phase 7 downloaded Qwen2.5-7B-Instruct
+    (15 GiB) into the configured root at 14:55, and the evaluation run then
+    fetched it AGAIN into ``~/.cache`` at 15:03 when it loaded the judge -
+    roughly 18 GiB of duplicate weights on a volume with 37 GiB free. Verified
+    directly:
+
+        import transformers                      # freezes the constant
+        os.environ["HF_HUB_CACHE"] = <the configured AlignLab cache>
+        huggingface_hub.constants.HF_HUB_CACHE   # still the user-home default
+
+    So this function also repoints the live constant when the library is
+    already imported, and reports the path that is actually in force rather
+    than the one it hoped for.
+
     Returns:
-        The variables this call actually set (empty if all were already set).
+        ``{"HF_HUB_CACHE": ..., "HF_DATASETS_CACHE": ...}`` for the variables
+        this call set, plus ``effective_hub_cache`` - the path downloads will
+        really use - and ``rebound_live_constant`` when an already-imported
+        ``huggingface_hub`` had to be corrected in place.
     """
     base = Path(root).expanduser().resolve() if root else cache_root()
 
@@ -170,7 +195,44 @@ def configure_hf_cache(root: str | Path | None = None) -> dict[str, str]:
             continue
         os.environ[name] = value
         applied[name] = value
+
+    target = os.environ["HF_HUB_CACHE"]
+    applied["effective_hub_cache"] = _rebind_hub_cache(target, applied)
     return applied
+
+
+def _rebind_hub_cache(target: str, applied: dict[str, str]) -> str:
+    """Repoint an already-imported huggingface_hub at ``target``.
+
+    Only touches modules that are ALREADY in ``sys.modules`` - importing
+    huggingface_hub here to fix a path it has not yet read would be the bug
+    creating the bug. If it was never imported, the environment variable set
+    above is enough and this is a no-op.
+    """
+    hub_constants = sys.modules.get("huggingface_hub.constants")
+    if hub_constants is None:
+        return target
+
+    stale = getattr(hub_constants, "HF_HUB_CACHE", None)
+    if stale == target:
+        return target
+
+    # The constant is re-exported into several namespaces by value, so every
+    # module holding its own binding has to be corrected, not just the source.
+    corrected = 0
+    for module in list(sys.modules.values()):
+        if module is None:
+            continue
+        name = getattr(module, "__name__", "")
+        if not (name == "huggingface_hub" or name.startswith("huggingface_hub.")):
+            continue
+        if getattr(module, "HF_HUB_CACHE", None) == stale:
+            module.HF_HUB_CACHE = target
+            corrected += 1
+
+    if corrected:
+        applied["rebound_live_constant"] = f"{stale} -> {target} ({corrected} modules)"
+    return target
 
 
 def describe_roots(

@@ -149,7 +149,7 @@ uv venv --python 3.11 .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install \n    --index-url https://download.pytorch.org/whl/cu124 torch
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -e ".[tracking,dev]"
 
-.venv/bin/python -m pytest -q                       # 580 passed locally, 3 skipped
+.venv/bin/python -m pytest -q                       # 582 passed, 1 skipped
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python -m alignlab.train env=server
 ```
 

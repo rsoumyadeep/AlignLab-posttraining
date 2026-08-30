@@ -170,6 +170,10 @@ def evaluate(policy, reference, batches, beta: float) -> dict:
 
 
 def run_dpo(cfg: DictConfig) -> dict[str, Any]:
+    # BEFORE transformers - huggingface_hub freezes HF_HUB_CACHE at import,
+    # so configuring the cache afterwards is a no-op. See configure_hf_cache.
+    hf_env = configure_hf_cache(cfg.env.cache_root or None)
+
     from transformers import AutoModelForCausalLM, AutoTokenizer, get_scheduler
 
     run_name = cfg.run_name or generate_run_name(prefix=cfg.experiment)
@@ -184,7 +188,10 @@ def run_dpo(cfg: DictConfig) -> dict[str, Any]:
     logger.info("Run: %s | beta=%s | objective=%s", run_name, cfg.dpo.beta,
                 "MEAN (diagnostic)" if cfg.dpo.length_normalise else "SUM (published)")
 
-    configure_hf_cache(cfg.env.cache_root or None)
+    logger.info("HF cache: %s", hf_env["effective_hub_cache"])
+    if "rebound_live_constant" in hf_env:
+        logger.warning("huggingface_hub was already imported; rebound %s",
+                       hf_env["rebound_live_constant"])
     seed_report = set_seed(
         cfg.reproducibility.seed, deterministic=cfg.reproducibility.deterministic
     )

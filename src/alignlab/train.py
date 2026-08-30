@@ -140,10 +140,12 @@ def train(cfg: DictConfig) -> dict[str, Any]:
     # Declaring cache_root in the config does nothing on its own; the HF
     # libraries read environment variables.
     hf_env = configure_hf_cache(cfg.env.cache_root or None)
-    if hf_env:
-        logger.info("Hugging Face cache directed to: %s", hf_env["HF_HUB_CACHE"])
-    else:
-        logger.info("Hugging Face cache left as already configured in the environment")
+    logger.info("Hugging Face cache in force: %s", hf_env["effective_hub_cache"])
+    if "HF_HUB_CACHE" not in hf_env:
+        logger.info("  (HF_HUB_CACHE was already exported; the environment outranks the config)")
+    if "rebound_live_constant" in hf_env:
+        logger.warning("huggingface_hub was already imported; rebound %s",
+                       hf_env["rebound_live_constant"])
 
     # -- reproducibility ---------------------------------------------------
     seed_report = set_seed(

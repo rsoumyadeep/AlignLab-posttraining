@@ -281,6 +281,10 @@ def audit_truncation(trainer, max_length: int) -> dict:
 
 def run_sft(cfg: DictConfig) -> dict[str, Any]:
     """Execute one supervised fine-tuning run."""
+    # BEFORE transformers/trl are imported - see configure_hf_cache. Setting
+    # HF_HUB_CACHE after huggingface_hub has been imported does nothing.
+    hf_env = configure_hf_cache(cfg.env.cache_root or None)
+
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from trl import SFTConfig, SFTTrainer
 
@@ -296,9 +300,11 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
     logger.info("Run: %s", run_name)
     logger.info("Output: %s", directory)
 
-    hf_env = configure_hf_cache(cfg.env.cache_root or None)
     if hf_env:
         logger.info("HF cache configured: %s", hf_env)
+    if "rebound_live_constant" in hf_env:
+        logger.warning("huggingface_hub was already imported; rebound %s",
+                       hf_env["rebound_live_constant"])
 
     seed_report = set_seed(
         cfg.reproducibility.seed, deterministic=cfg.reproducibility.deterministic

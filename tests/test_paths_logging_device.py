@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -307,3 +308,130 @@ def test_configure_hf_cache_falls_back_to_cache_root(
 
     applied = configure_hf_cache()
     assert applied["HF_HUB_CACHE"].startswith(str(isolated_roots["cache"].resolve()))
+
+
+# --------------------------------------------------------------------------
+# The Phase 7 duplicate-download bug
+# --------------------------------------------------------------------------
+#
+# Setting HF_HUB_CACHE is NOT sufficient. huggingface_hub reads it once, at
+# import, into huggingface_hub.constants, and every later download resolves
+# against that frozen value. Phase 7's evaluation run imported transformers
+# before calling configure_hf_cache, so the call was a no-op and the 15 GiB
+# judge was downloaded a second time into ~/.cache - roughly 18 GiB of
+# duplicate weights on a volume with 37 GiB free.
+
+
+class _FakeHubModule:
+    """Stands in for huggingface_hub.constants, which may not be installed."""
+
+    def __init__(self, name: str, frozen: str) -> None:
+        self.__name__ = name
+        self.HF_HUB_CACHE = frozen
+
+
+def test_rebinds_already_imported_hub_constant(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from alignlab.paths import configure_hf_cache
+
+    for name in ("HF_HUB_CACHE", "HF_DATASETS_CACHE", "HF_HOME"):
+        monkeypatch.delenv(name, raising=False)
+
+    # Built rather than written literally: a literal user-home path in the
+    # source is what tests/test_no_hardcoded_paths.py exists to forbid.
+    frozen = str(tmp_path / "stale-home-cache" / "huggingface" / "hub")
+    constants = _FakeHubModule("huggingface_hub.constants", frozen)
+    namespace = _FakeHubModule("huggingface_hub", frozen)
+    monkeypatch.setitem(sys.modules, "huggingface_hub.constants", constants)
+    monkeypatch.setitem(sys.modules, "huggingface_hub", namespace)
+
+    applied = configure_hf_cache(tmp_path / "hf")
+    expected = str((tmp_path / "hf" / "hub").resolve())
+
+    # Both the source constant and the re-export must move - the value is
+    # copied into several namespaces, so fixing only one leaves stale bindings.
+    assert constants.HF_HUB_CACHE == expected
+    assert namespace.HF_HUB_CACHE == expected
+    assert applied["effective_hub_cache"] == expected
+    assert "rebound_live_constant" in applied
+    assert frozen in applied["rebound_live_constant"]
+
+
+def test_no_rebind_reported_when_hub_not_imported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A clean process needs no rebinding, and must not claim it did one."""
+    from alignlab.paths import configure_hf_cache
+
+    for name in ("HF_HUB_CACHE", "HF_DATASETS_CACHE", "HF_HOME"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.delitem(sys.modules, "huggingface_hub.constants", raising=False)
+    monkeypatch.delitem(sys.modules, "huggingface_hub", raising=False)
+
+    applied = configure_hf_cache(tmp_path / "hf")
+
+    assert "rebound_live_constant" not in applied
+    assert applied["effective_hub_cache"] == str((tmp_path / "hf" / "hub").resolve())
+
+
+def test_rebind_does_not_import_huggingface_hub(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Importing the library to fix a path it has not read would BE the bug."""
+    from alignlab.paths import configure_hf_cache
+
+    for name in ("HF_HUB_CACHE", "HF_DATASETS_CACHE", "HF_HOME"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.delitem(sys.modules, "huggingface_hub.constants", raising=False)
+    monkeypatch.delitem(sys.modules, "huggingface_hub", raising=False)
+
+    configure_hf_cache(tmp_path / "hf")
+
+    assert "huggingface_hub" not in sys.modules
+
+
+def test_effective_cache_reported_when_operator_overrides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The reported path is the one in force, not the one we wanted.
+
+    train.py logs this value; before the fix it read applied["HF_HUB_CACHE"],
+    which is absent exactly when the operator has exported their own.
+    """
+    from alignlab.paths import configure_hf_cache
+
+    monkeypatch.setenv("HF_HUB_CACHE", "/deliberate/operator/choice")
+    monkeypatch.delenv("HF_DATASETS_CACHE", raising=False)
+
+    applied = configure_hf_cache(tmp_path / "hf")
+
+    assert "HF_HUB_CACHE" not in applied
+    assert applied["effective_hub_cache"] == "/deliberate/operator/choice"
+
+
+def test_entrypoints_configure_cache_before_importing_transformers() -> None:
+    """The ordering IS the fix; rebinding is only the safety net.
+
+    Asserted on source text because the alternative - importing each entrypoint
+    and watching sys.modules - cannot distinguish "imported by this function"
+    from "already imported by the test session".
+    """
+    import inspect
+
+    from alignlab import dpo_train, evaluate, sft
+
+    for module, function in (
+        (evaluate, "run_evaluation_suite"),
+        (sft, "run_sft"),
+        (dpo_train, "run_dpo"),
+    ):
+        source = inspect.getsource(getattr(module, function))
+        configure_at = source.find("configure_hf_cache(")
+        transformers_at = source.find("from transformers import")
+        assert configure_at != -1, f"{function} does not configure the HF cache"
+        assert transformers_at != -1, f"{function} does not import transformers"
+        assert configure_at < transformers_at, (
+            f"{function} imports transformers before configuring the HF cache; "
+            "huggingface_hub freezes HF_HUB_CACHE at import, so the call is a no-op"
+        )

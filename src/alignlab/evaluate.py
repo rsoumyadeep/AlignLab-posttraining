@@ -179,6 +179,13 @@ def _fingerprint_record(section, info: dict) -> dict:
 
 
 def run_evaluation_suite(cfg: DictConfig) -> dict[str, Any]:
+    # BEFORE transformers is imported. huggingface_hub freezes HF_HUB_CACHE at
+    # import time, so configuring the cache afterwards is a no-op and the
+    # download lands in ~/.cache regardless of the config. Phase 7 paid 18 GiB
+    # of duplicate weights to learn that; configure_hf_cache now also repoints
+    # an already-imported library, but ordering it correctly is the real fix.
+    hf_env = configure_hf_cache(cfg.env.cache_root or None)
+
     from transformers import AutoTokenizer
 
     run_name = cfg.run_name or generate_run_name(prefix=cfg.experiment)
@@ -190,7 +197,10 @@ def run_evaluation_suite(cfg: DictConfig) -> dict[str, Any]:
     logger.info("AlignLab Phase 7 - evaluation suite")
     logger.info("=" * 70)
 
-    configure_hf_cache(cfg.env.cache_root or None)
+    logger.info("HF cache: %s", hf_env.get("effective_hub_cache"))
+    if "rebound_live_constant" in hf_env:
+        logger.warning("huggingface_hub was already imported; rebound %s",
+                       hf_env["rebound_live_constant"])
     set_seed(cfg.reproducibility.seed, deterministic=cfg.reproducibility.deterministic)
     device = resolve_device(cfg.env.device)
     dtype = torch.bfloat16 if (device.type == "cuda" and torch.cuda.is_bf16_supported()) else torch.float32
