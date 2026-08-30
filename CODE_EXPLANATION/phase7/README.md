@@ -17,7 +17,7 @@ rather than aborting the pass).
 | `src/alignlab/evals/report.py` | dashboard and pairwise comparison; **no aggregate score** |
 | `src/alignlab/evaluate.py` | Hydra entrypoint |
 | `configs/eval.yaml`, `configs/eval/{default,quick}.yaml` | the model set, datasets, prompts, judge |
-| `tests/test_eval_metrics.py`, `tests/test_eval_judge.py` | 78 tests |
+| `tests/test_eval_metrics.py`, `tests/test_eval_judge.py` | 82 tests |
 
 **The split is the design.** Metrics are pure so they can be tested against
 hand-computed values; runners touch models so they cannot be. A metric you can
@@ -134,6 +134,22 @@ checkpoint. LoRA and QLoRA checkpoints are **adapters** — that call fails.
 Caught before the first real run; now detected via `adapter_config.json` and
 loaded through `PeftModel`, unmerged.
 
+### 7d. `configure_hf_cache` was a no-op, in every entrypoint
+Setting `HF_HUB_CACHE` is not sufficient: `huggingface_hub` reads it once, at
+import, into module constants. All three entrypoints imported `transformers`
+before calling `configure_hf_cache`, so the call never had any effect and the
+15 GiB judge was downloaded a second time into `~/.cache` - about 18 GB of
+duplicate weights on a volume with 37 GiB free. Fixed by ordering the call
+before the import, plus rebinding the live constant when the library is already
+imported. A test asserts the ordering by source inspection and was verified to
+fail when the old ordering is restored.
+
+### 7e. `dataset_fingerprint` was null in every provenance record
+And one `eval_fingerprint` named the preference rows while also sitting beside
+the perplexity numbers. Each metric family now records its own dataset, split,
+row count, rows dropped and sha256. A provenance field that is silently null is
+the same failure the status vocabulary in §6 exists to prevent.
+
 ### 7c. A stray non-ASCII character in a docstring
 Two Chinese characters appeared mid-sentence in `metrics.py`. Removed. (The
 remaining non-ASCII — em-dashes, `±`, and the `•` inside the bullet-list regex
@@ -160,4 +176,8 @@ about `print()` under Windows cp1252.)
 | ties/unparsed not folded into the win rate | `TestAggregation` (5) |
 | limitations attached to every result | `TestProvenanceAndLimitations` (5) |
 
-**78 Phase 7 tests. Suite total: 577 passed, 2 skipped.**
+| no provenance field silently null | `TestProvenanceFingerprints` (4) |
+
+**82 Phase 7 evaluation tests, plus 5 in `test_paths_logging_device.py` for the
+cache-ordering fix. Suite total: 585 passed / 3 skipped locally, 587 passed /
+1 skipped on the server** (the difference is CUDA, SIGUSR1 and `wandb`).
