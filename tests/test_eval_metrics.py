@@ -296,3 +296,87 @@ class TestIntervalHelpers:
     def test_width(self):
         interval = Interval(0.5, 0.4, 0.6, 0.95, "wilson", 100)
         assert interval.width == pytest.approx(0.2)
+
+
+class TestDashboard:
+    """The dashboard must refuse to collapse metrics into one score."""
+
+    @staticmethod
+    def _dashboard():
+        from datetime import datetime, timezone
+        from alignlab.evals.report import Dashboard, ModelEvaluation
+
+        d = Dashboard(created_at=datetime.now(timezone.utc).isoformat())
+        for name, stop, gen_len in (("SFT", 4, 93.8), ("PEFT", 0, 200.0)):
+            d.models.append(ModelEvaluation(
+                name=name, checkpoint=f"/x/{name}", provenance={},
+                perplexity={"completion": {"perplexity": 7.2, "n_tokens": 100,
+                                           "region": "completion"}},
+                preference={"n": 184, "sum_correct": 86, "mean_correct": 108,
+                            "sum_accuracy": 86 / 184, "mean_accuracy": 108 / 184,
+                            "chosen_tokens_mean": 271.7,
+                            "rejected_tokens_mean": 242.2,
+                            "length_attribution": {}},
+                generation={"termination": {"n": 4, "emitted_stop_token": stop,
+                                            "terminated": stop, "hit_length_cap": 4 - stop,
+                                            "empty": 0},
+                            "length": {"mean": gen_len}, "mean_distinct_2": 0.9},
+            ))
+        return d
+
+    def test_no_aggregate_score_is_produced(self):
+        """Structural: there is no function that collapses metrics."""
+        from alignlab.evals import report
+
+        names = [n for n in dir(report) if "score" in n.lower()]
+        assert names == []
+        assert "no_aggregate_score" in self._dashboard().to_dict()
+
+    def test_phase_4_stop_gap_is_resolvable_even_at_n_equals_4(self):
+        """0/4 vs 4/4 is a real separation; the harness must say so."""
+        from alignlab.evals.report import compare_models
+
+        verdicts = compare_models(self._dashboard(), "SFT", "PEFT")
+        stop = next(v for v in verdicts if v["metric"] == "stop_token_rate")
+        assert stop["resolvable"] is True
+
+    def test_identical_preference_rates_are_unresolvable(self):
+        from alignlab.evals.report import compare_models
+
+        verdicts = compare_models(self._dashboard(), "SFT", "PEFT")
+        pref = next(v for v in verdicts if v["metric"].startswith("preference_sum"))
+        assert pref["resolvable"] is False
+        assert "NOT resolvable" in pref["note"]
+
+    def test_length_is_always_reported_with_preference(self):
+        from alignlab.evals.report import compare_models
+
+        verdicts = compare_models(self._dashboard(), "SFT", "PEFT")
+        pref = next(v for v in verdicts if v["metric"].startswith("preference_sum"))
+        assert "length_note" in pref
+        assert any(v["metric"] == "generated_length" for v in verdicts)
+
+    def test_missing_metric_is_NOT_MEASURED_not_absent(self):
+        from alignlab.evals.metrics import NOT_MEASURED
+        from alignlab.evals.report import compare_models
+
+        d = self._dashboard()
+        d.models[1].generation = None
+        verdicts = compare_models(d, "SFT", "PEFT")
+        term = next(v for v in verdicts if v["metric"] == "termination")
+        assert term["status"] == NOT_MEASURED
+
+    def test_unknown_model_raises(self):
+        from alignlab.evals.report import compare_models
+
+        with pytest.raises(KeyError, match="unknown model"):
+            compare_models(self._dashboard(), "SFT", "nope")
+
+    def test_render_text_runs_and_states_the_no_score_rule(self):
+        from alignlab.evals.report import compare_models, render_text
+
+        d = self._dashboard()
+        d.comparisons = compare_models(d, "SFT", "PEFT")
+        text = render_text(d)
+        assert "NO AGGREGATE SCORE IS PRODUCED" in text
+        assert "SFT" in text and "PEFT" in text
