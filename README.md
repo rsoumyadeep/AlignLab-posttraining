@@ -44,7 +44,7 @@ No LoRA, no QLoRA, no DPO yet.
 | 1C — Version alignment, storage policy, path-wiring fix | ✅ **COMPLETE** |
 | 2 — Transformer understanding | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 3 — SFT | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
-| 4 — PEFT (LoRA / QLoRA) | ⬜ not started |
+| 4 — PEFT (LoRA / QLoRA) | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 5 — Preference learning / RLHF | ⬜ not started |
 | 6 — DPO | ⬜ not started |
 | 7 — Evaluation | ⬜ skeleton only |
@@ -88,7 +88,7 @@ uv venv --python 3.11 .venv
 uv pip install -e ".[tracking,dev]"          # local: CPU torch
 
 python scripts/env_report.py          # what this machine actually has
-python -m pytest -q                   # 347 passed, 2 skipped
+python -m pytest -q                   # 403 passed, 2 skipped
 python -m alignlab.train              # foundation smoke run (toy model)
 ```
 
@@ -99,6 +99,20 @@ python -m alignlab.train env=local train.max_steps=50 reproducibility.seed=7
 python -m alignlab.train tracking=wandb_offline
 ```
 
+### Fine-tuning (Phase 3 / Phase 4), server only
+
+```bash
+python -m alignlab.sft env=server                    # full-parameter SFT
+python -m alignlab.sft env=server peft=lora          # LoRA  r=16, attention
+python -m alignlab.sft env=server peft=qlora         # QLoRA 4-bit NF4 base
+python -m alignlab.sft env=server peft=lora peft.r=64 sft=smoke
+```
+
+The three arms differ in exactly one thing — how the frozen base is stored —
+and a test asserts that every adapter setting is shared between `lora` and
+`qlora`. Every run re-verifies its own loss mask before the first optimiser
+step and refuses to train if it disagrees with an independent computation.
+
 ### Server (`csrslave`)
 
 ```bash
@@ -107,7 +121,7 @@ uv venv --python 3.11 .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install \n    --index-url https://download.pytorch.org/whl/cu124 torch
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -e ".[tracking,dev]"
 
-.venv/bin/python -m pytest -q                       # 347 passed, 1 skipped
+.venv/bin/python -m pytest -q                       # 404 passed, 1 skipped
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python -m alignlab.train env=server
 ```
 
@@ -122,12 +136,15 @@ package cache stays off the 99%-full `/data` volume. Delete it afterwards.
 src/alignlab/       foundation modules (see CODE_EXPLANATION/phase1/)
 src/alignlab/models/ Transformer components, Phase 2 (attention x3, RoPE/ALiBi,
                      RMSNorm, SwiGLU, decoder-only model, KV cache, decoding)
+src/alignlab/lora.py first-principles LoRA (Phase 4), verified against peft
+src/alignlab/sft.py  SFT/LoRA/QLoRA entrypoint with three pre-flight audits
 configs/            Hydra tree; env/ group absorbs machine differences
-tests/              349 tests; no network or credentials needed
+tests/              405 tests; no network or credentials needed
 scripts/            env_report.py, server_probe.sh (executed on csrslave)
 docs/phase1/        phase reports, storage policy, server probe evidence
 docs/phase2/        Phase 2 report + verbatim GPU experiment output
 docs/phase3/        Phase 3 report, weight-download evidence, before/after eval
+docs/phase4/        Phase 4 report, bitsandbytes verification, SVD rank analysis
 
 STUDY_WITH_CLAUDE/  theory, intuition, derivations + USER checkpoints
 CODE_EXPLANATION/   what the code actually does (never imagined code)
