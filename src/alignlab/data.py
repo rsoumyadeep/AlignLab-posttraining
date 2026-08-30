@@ -256,12 +256,31 @@ def load_instruction_dataset(
 
     def convert(dataset, split_name: str):
         before = len(dataset)
+        # load_from_cache_file=False IS NOT PARANOIA - IT IS A BUG FIX.
+        #
+        # datasets.map() caches its output on disk, keyed by a hash of the
+        # mapping function. When _strip_boundary_whitespace was added to
+        # to_prompt_completion, that hash did NOT change enough to invalidate
+        # the cache: a rerun silently reused the PRE-FIX rows, the same three
+        # prefix-inconsistent examples reappeared (indices 44, 119, 190), and
+        # the fix looked like it had failed. Calling the function directly
+        # proved it worked; the dataset was simply stale.
+        #
+        # A silently stale cache is worse than a slow one: it makes a code
+        # change appear ineffective and, in the other direction, would let a
+        # reverted change appear still applied. The conversion is cheap dict
+        # manipulation over 9,500 rows, so recomputing costs seconds and buys
+        # the guarantee that the rows on disk correspond to the code in the
+        # repository.
         converted = dataset.map(
             to_prompt_completion,
             remove_columns=dataset.column_names,
             desc=f"to prompt/completion ({split_name})",
+            load_from_cache_file=False,
         )
-        kept = converted.filter(is_wellformed, desc=f"filter ({split_name})")
+        kept = converted.filter(
+            is_wellformed, desc=f"filter ({split_name})", load_from_cache_file=False
+        )
         dropped = before - len(kept)
         if dropped:
             logger.info(
