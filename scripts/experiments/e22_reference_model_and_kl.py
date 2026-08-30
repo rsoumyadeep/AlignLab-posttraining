@@ -38,6 +38,48 @@ HYPOTHESES, recorded before running:
       (E21: 56.5% longer in tokens), the SUM comparison should favour chosen
       LESS than the length-normalised MEAN comparison does
 
+OUTCOMES, recorded after running on 108 usable pairs. Hypotheses above are
+preserved as written.
+
+  H1  HOLDS, with a caveat the criterion hid. KL(SFT || base) mean 0.6547
+      nats/token - but median 0.2044 and max 7.3349. The distribution is
+      heavily RIGHT-SKEWED, so the mean is not the typical value and "small"
+      is doing unearned work in the hypothesis. The median is the number to
+      quote: a typical token's distribution moved ~0.20 nats.
+
+  H2  HOLDS. KL(LoRA || base) 0.6233 < KL(SFT || base) 0.6547, and QLoRA is
+      lower still at 0.5564. Consistent with LoRA changing 0.28% of parameters
+      and being unable to touch the output projection (Phase 4's E20).
+
+  H3  HOLDS EXACTLY. With policy == reference the implicit reward is
+      0.000e+00 on every sequence checked. The reference wiring is correct.
+
+  H4  **DISPROVED, and this is the most consequential Phase 5 result.** By the
+      SUM of log-probabilities - the published DPO objective - the SFT model
+      prefers the chosen response on only 51/108 pairs (47.2%). That is BELOW
+      CHANCE.
+
+  H5  HOLDS, and explains H4. Length-normalising flips the same comparison to
+      63/108 (58.3%) - an 11.1 point swing on identical models and identical
+      data.
+
+WHAT H4's FAILURE MEANS. The two numbers disagree because of length, not
+quality. E21 measured chosen responses at 56.5% longer in tokens, and a summed
+log-probability is more negative for a longer sequence simply for being longer.
+So the SUM comparison is biased AGAINST the chosen response, hard enough to
+push it below 50%.
+
+Three consequences for Phase 6, all of which would be easy to get wrong:
+
+  * THE BASELINE IS 47.2%, NOT 58.3%, if Phase 6 uses the published objective.
+    Quoting the length-normalised figure as the baseline while training on the
+    summed one would understate DPO's improvement.
+  * "DPO raised preference accuracy from 47% to X%" is only meaningful with
+    the length caveat attached, because part of any gain may be the model
+    learning to lengthen its outputs rather than improve them.
+  * Phase 6 MUST record which variant it optimises. They are different
+    objectives that happen to share a name.
+
 WHAT THIS IS NOT. No DPO training. No PPO implementation. No reward model is
 trained. This measures properties of existing models on preference data.
 
@@ -190,10 +232,13 @@ def main() -> int:
     # ---------------------------------------------------------------- H1 / H2
     print("\n--- H1: did SFT move the policy away from the base at all? ---")
     sft = results.get("full SFT", {})
-    h1 = 0.0 < sft.get("kl_mean", 0.0) < 1.0
-    print(f"  KL(SFT || base): mean {sft.get('kl_mean', 0):.4f} nats/token, "
-          f"max {sft.get('kl_max', 0):.4f}")
-    print(f"  H1 holds (positive but small): {h1}")
+    h1 = sft.get("kl_mean", 0.0) > 0.0
+    print(f"  KL(SFT || base): mean {sft.get('kl_mean', 0):.4f}  "
+          f"median {sft.get('kl_median', 0):.4f}  max {sft.get('kl_max', 0):.4f}")
+    print(f"  H1 holds (positive): {h1}")
+    print("  NOTE the SKEW: mean 3x the median, max ~36x it. The mean is not")
+    print("  the typical value; quote the MEDIAN. The hypothesis said 'small',")
+    print("  which the criterion could not actually test.")
     print("  This is the quantity an RLHF KL penalty is written in. One epoch of")
     print("  SFT is worth this much divergence per token - the scale a penalty")
     print("  coefficient would have to be chosen against.")
