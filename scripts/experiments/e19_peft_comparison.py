@@ -58,7 +58,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from alignlab.data import load_instruction_dataset
-from alignlab.paths import configure_hf_cache, repo_root
+from alignlab.paths import checkpoint_root, configure_hf_cache, output_root, repo_root
 from alignlab.storage import GIB
 
 BASE_MODEL = "Qwen/Qwen2.5-1.5B"
@@ -194,8 +194,13 @@ def generate(model, tokenizer, device, max_new_tokens: int) -> list[dict]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--outputs-root", default="/data/home/rsoumyadeep/AlignLab/outputs")
-    parser.add_argument("--ckpt-root", default="/data/home/rsoumyadeep/AlignLab/checkpoints")
+    # Defaults resolve through alignlab.paths (config -> ALIGNLAB_* env var ->
+    # repo-relative), NOT a hard-coded server path. tests/test_no_hardcoded_paths
+    # caught an earlier version of this file doing the latter, which is exactly
+    # what that test exists for: a server path baked into a script makes the
+    # script unrunnable anywhere else and silently wrong if the roots move.
+    parser.add_argument("--outputs-root", default=None)
+    parser.add_argument("--ckpt-root", default=None)
     parser.add_argument("--eval-examples", type=int, default=200)
     parser.add_argument("--max-new-tokens", type=int, default=200)
     parser.add_argument("--skip-eval", action="store_true")
@@ -203,8 +208,10 @@ def main() -> int:
     args = parser.parse_args()
 
     configure_hf_cache()
-    outputs_root = Path(args.outputs_root)
-    ckpt_root = Path(args.ckpt_root)
+    outputs_root = Path(args.outputs_root) if args.outputs_root else output_root()
+    ckpt_root = Path(args.ckpt_root) if args.ckpt_root else checkpoint_root()
+    print(f"  outputs root : {outputs_root}")
+    print(f"  ckpt root    : {ckpt_root}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
 
