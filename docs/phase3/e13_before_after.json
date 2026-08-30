@@ -1,0 +1,115 @@
+{
+  "base": {
+    "name": "BEFORE - base Qwen2.5-1.5B",
+    "path": "Qwen/Qwen2.5-1.5B",
+    "completion_nll": 2.144859552684278,
+    "completion_tokens": 38831,
+    "prompt_nll": 3.4338535903903535,
+    "prompt_tokens": 24187,
+    "examples_scored": 200,
+    "examples_skipped": 0,
+    "completion_ppl": 8.540842056274414,
+    "prompt_ppl": 30.995859146118164,
+    "samples": [
+      {
+        "prompt": "Write a two-sentence summary of why the sky appears blue.",
+        "response": ".DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears",
+        "n_generated": 200,
+        "hit_length_cap": true,
+        "stopped_naturally": false,
+        "emitted_im_end": false
+      },
+      {
+        "prompt": "List three practical tips for someone learning to cook.",
+        "response": "\u70f9\u996a\u662f\u4e00\u9879\u9700\u8981\u8010\u5fc3\u548c\u5b9e\u8df5\u7684\u6280\u80fd\u3002\u4ee5\u4e0b\u662f\u4e09\u4e2a\u5b9e\u7528\u7684\u70f9\u996a\u6280\u5de7\uff1a\n1. \u5b66\u4e60\u57fa\u672c\u7684\u70f9\u996a\u6280\u5de7\uff1a\u5728\u70f9\u996a\u4e4b\u524d\uff0c\u4e86\u89e3\u57fa\u672c\u7684\u70f9\u996a\u6280\u5de7\u662f\u975e\u5e38\u91cd\u8981\u7684\u3002\u4f8b\u5982\uff0c\u5982\u4f55\u6b63\u786e\u5730\u5207\u83dc\u3001\u5982\u4f55\u4f7f\u7528\u9505\u5177\u3001\u5982\u4f55\u63a7\u5236\u706b\u5019\u7b49\u7b49\u3002\u8fd9\u4e9b\u57fa\u672c\u6280\u5de7\u53ef\u4ee5\u5e2e\u52a9\u4f60\u66f4\u597d\u5730\u638c\u63e1\u70f9\u996a\u6280\u5de7\u3002\n2. \u7ec3\u4e60\u70f9\u996a\uff1a\u70f9\u996a\u662f\u4e00\u9879\u9700\u8981\u53cd\u590d\u7ec3\u4e60\u7684\u6280\u80fd\u3002\u53ea\u6709\u901a\u8fc7\u4e0d\u65ad\u7684\u5b9e\u8df5\uff0c\u4f60\u624d\u80fd\u638c\u63e1\u70f9\u996a\u6280\u5de7\u3002\u5c1d\u8bd5\u5236\u4f5c\u4e00\u4e9b\u7b80\u5355\u7684\u83dc\u80b4\uff0c\u7136\u540e\u9010\u6e10\u5c1d\u8bd5\u66f4\u590d\u6742\u7684\u83dc\u80b4\u3002\u8fd9\u6837\u53ef\u4ee5\u5e2e\u52a9\u4f60\u66f4\u597d\u5730\u638c\u63e1\u70f9\u996a\u6280\u5de7\u3002\n3. \u5b66\u4e60\u5982\u4f55\u9009\u62e9\u98df\u6750\uff1a\u5728\u70f9\u996a\u4e4b\u524d\uff0c\u4e86\u89e3\u5982\u4f55\u9009\u62e9\u98df\u6750\u4e5f\u662f\u975e\u5e38\u91cd\u8981\u7684\u3002\u9009\u62e9\u65b0\u9c9c\u3001\u4f18\u8d28\u7684\u98df\u6750\u53ef\u4ee5\u63d0\u9ad8\u83dc\u80b4\u7684\u53e3\u611f\u548c\u8425\u517b\u4ef7\u503c\u3002\u5728\u8d2d\u4e70\u98df\u6750\u65f6\uff0c\u6ce8\u610f\u67e5\u770b\u98df\u6750\u7684\u4fdd\u8d28\u671f\u548c\u4ea7\u5730\uff0c\u4ee5\u786e\u4fdd\u98df\u6750\u7684\u65b0\u9c9c\u5ea6\u548c\u8d28\u91cf\u3002",
+        "n_generated": 172,
+        "hit_length_cap": false,
+        "stopped_naturally": true,
+        "emitted_im_end": false
+      },
+      {
+        "prompt": "What is the difference between a list and a tuple in Python?",
+        "response": "A list and a tuple are both used to store collections of items in Python, but they have some key differences:\n\n1. **Mutability**: The main difference is that lists are mutable, meaning you can change their contents after they are created. Tuples, on the other hand, are immutable, which means once a tuple is created, you cannot modify its contents.\n\n2. **Syntax**: Lists are defined using square brackets `[]`, while tuples are defined using parentheses `()`.\n\n3. **Performance**: Tuples are generally faster than lists because they are immutable. This can be important if you need to perform many operations on the same tuple repeatedly.\n\n4. **Use Cases**: Lists are often used when you need to modify the data, such as when you are building a dynamic list of items. Tuples are typically used when you have a fixed set of values that should not be changed, such as coordinates or configuration settings.\n\nHere's an example to illustrate these differences:\n\n```python\n#",
+        "n_generated": 200,
+        "hit_length_cap": true,
+        "stopped_naturally": false,
+        "emitted_im_end": false
+      },
+      {
+        "prompt": "Write a short, friendly email declining a meeting invitation.",
+        "response": "-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled",
+        "n_generated": 200,
+        "hit_length_cap": true,
+        "stopped_naturally": false,
+        "emitted_im_end": false
+      }
+    ],
+    "stopped_naturally": 1,
+    "emitted_im_end": 0
+  },
+  "sft": {
+    "name": "AFTER - SFT",
+    "path": "/data/home/rsoumyadeep/AlignLab/checkpoints/sft-qwen1p5b-noRobots-001/final",
+    "completion_nll": 1.973965615149994,
+    "completion_tokens": 38831,
+    "prompt_nll": 3.2220252539337055,
+    "prompt_tokens": 24187,
+    "examples_scored": 200,
+    "examples_skipped": 0,
+    "completion_ppl": 7.199169158935547,
+    "prompt_ppl": 25.078857421875,
+    "samples": [
+      {
+        "prompt": "Write a two-sentence summary of why the sky appears blue.",
+        "response": "The sky appears blue because of the scattering of sunlight by the atmosphere. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.",
+        "n_generated": 37,
+        "hit_length_cap": false,
+        "stopped_naturally": true,
+        "emitted_im_end": true
+      },
+      {
+        "prompt": "List three practical tips for someone learning to cook.",
+        "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n2. Practice makes perfect. Practice is key to learning how to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. There are many resources available, including cookbooks, online tutorials, and cooking classes.",
+        "n_generated": 146,
+        "hit_length_cap": false,
+        "stopped_naturally": true,
+        "emitted_im_end": true
+      },
+      {
+        "prompt": "What is the difference between a list and a tuple in Python?",
+        "response": "In Python, a list is a mutable data structure that can be changed after it is created. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. This means that once a tuple is created, its elements cannot be modified. \n\nHere is an example of a list and a tuple in Python:\n\nlist = [1, 2, 3]\ntuple = (1, 2, 3)\n\nIn the above example, the list is mutable and can be changed, while the tuple is immutable and cannot be changed.",
+        "n_generated": 117,
+        "hit_length_cap": false,
+        "stopped_naturally": true,
+        "emitted_im_end": true
+      },
+      {
+        "prompt": "Write a short, friendly email declining a meeting invitation.",
+        "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for that time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+        "n_generated": 75,
+        "hit_length_cap": false,
+        "stopped_naturally": true,
+        "emitted_im_end": true
+      }
+    ],
+    "stopped_naturally": 4,
+    "emitted_im_end": 4
+  },
+  "eval_fingerprint": {
+    "name": "HuggingFaceH4/no_robots",
+    "split": "test",
+    "revision": "main",
+    "n_rows": 200,
+    "n_chars": 281029,
+    "sha256": "762160ae5ca3cde3c62874d4792576c85ad6d45b8ec6632e7b166bcec5f0b40e"
+  },
+  "settings": {
+    "sft_model": "/data/home/rsoumyadeep/AlignLab/checkpoints/sft-qwen1p5b-noRobots-001/final",
+    "eval_examples": 200,
+    "max_new_tokens": 200,
+    "seed": 42,
+    "out": "docs/phase3/e13_before_after.json"
+  },
+  "device": "cuda",
+  "dtype": "torch.bfloat16"
+}

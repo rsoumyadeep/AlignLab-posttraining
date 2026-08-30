@@ -1,0 +1,69 @@
+{
+  "base": {
+    "template": {
+      "nll": 8.872747405356314,
+      "tokens": 1521
+    },
+    "usertext": {
+      "nll": 2.6401536517551802,
+      "tokens": 11193
+    },
+    "completion": {
+      "nll": 2.124304784789433,
+      "tokens": 21001
+    }
+  },
+  "sft": {
+    "template": {
+      "nll": 8.130260979676606,
+      "tokens": 1521
+    },
+    "usertext": {
+      "nll": 2.5206782672450756,
+      "tokens": 11193
+    },
+    "completion": {
+      "nll": 1.9729311474011175,
+      "tokens": 21001
+    }
+  },
+  "rows": {
+    "template": {
+      "base": 8.872747405356314,
+      "sft": 8.130260979676606,
+      "abs_drop": 0.7424864256797079,
+      "rel": -0.08368168186907728,
+      "tokens": 1521
+    },
+    "usertext": {
+      "base": 2.6401536517551802,
+      "sft": 2.5206782672450756,
+      "abs_drop": 0.11947538451010464,
+      "rel": -0.045253193665708485,
+      "tokens": 11193
+    },
+    "completion": {
+      "base": 2.124304784789433,
+      "sft": 1.9729311474011175,
+      "abs_drop": 0.15137363738831544,
+      "rel": -0.07125796565172263,
+      "tokens": 21001
+    }
+  },
+  "h2_template_improves_more_absolutely": true,
+  "prompt_region_nll_drop": 0.19400738023284858,
+  "template_share_of_prompt_gain": 0.457843732997185,
+  "eval_fingerprint": {
+    "name": "HuggingFaceH4/no_robots",
+    "split": "test",
+    "revision": "main",
+    "n_rows": 100,
+    "n_chars": 150133,
+    "sha256": "5a354825007d026b37e2b0efc5b00b7b2e6ccb38b757102539a3a84bb1e6e1de"
+  },
+  "settings": {
+    "sft_model": "/data/home/rsoumyadeep/AlignLab/checkpoints/sft-qwen1p5b-noRobots-001/final",
+    "eval_examples": 100,
+    "out": "docs/phase3/e14_region_decomposition.json"
+  }
+}

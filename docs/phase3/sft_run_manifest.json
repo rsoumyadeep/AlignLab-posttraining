@@ -1,0 +1,247 @@
+{
+  "run_name": "sft-qwen1p5b-noRobots-001",
+  "created_at": "2026-08-30T04:56:50.320115+00:00",
+  "alignlab_version": "0.1.0",
+  "environment": "server",
+  "seed": 42,
+  "config": {
+    "run_name": "sft-qwen1p5b-noRobots-001",
+    "experiment": "sft",
+    "reproducibility": {
+      "seed": 42,
+      "deterministic": false
+    },
+    "storage_guard": true,
+    "allow_low_disk": false,
+    "extras": {},
+    "env": {
+      "name": "server",
+      "output_root": "/data/home/rsoumyadeep/AlignLab/outputs",
+      "checkpoint_root": "/data/home/rsoumyadeep/AlignLab/checkpoints",
+      "cache_root": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface",
+      "device": "auto",
+      "num_workers": 4,
+      "expect_cuda": true
+    },
+    "model": {
+      "id": "Qwen/Qwen2.5-1.5B",
+      "revision": "8faed761d45a263340a0528343f099c05c9a4323",
+      "dtype": "auto",
+      "attn_implementation": "sdpa",
+      "gradient_checkpointing": true
+    },
+    "data": {
+      "name": "HuggingFaceH4/no_robots",
+      "revision": "main",
+      "train_split": "train",
+      "eval_split": "test",
+      "max_train": null,
+      "max_eval": 200
+    },
+    "sft": {
+      "max_length": 1024,
+      "per_device_train_batch_size": 4,
+      "per_device_eval_batch_size": 4,
+      "gradient_accumulation_steps": 8,
+      "learning_rate": 2e-05,
+      "lr_scheduler_type": "cosine",
+      "warmup_ratio": 0.03,
+      "weight_decay": 0.0,
+      "max_grad_norm": 1.0,
+      "num_train_epochs": 1.0,
+      "max_steps": -1,
+      "logging_steps": 5,
+      "eval_steps": 50,
+      "save_steps": 100,
+      "save_total_limit": 1,
+      "seed": 42,
+      "packing": false,
+      "completion_only_loss": null,
+      "resume": true
+    },
+    "logging": {
+      "level": "INFO",
+      "file_level": "DEBUG"
+    },
+    "tracking": {
+      "mode": "offline",
+      "project": "alignlab",
+      "entity": null,
+      "tags": []
+    }
+  },
+  "config_sha256": "e14d1d8693d7574abc1c383933ecf2cb38cf9703bcd0bd6e7aaf2480425dfcf9",
+  "git": {
+    "commit": "3c66757f73f8aaa716eead73c4526b8551667d76",
+    "branch": "phase-3-sft",
+    "dirty": true,
+    "dirty_files": [
+      "?? docs/phase3/"
+    ],
+    "describe": "3c66757"
+  },
+  "platform": {
+    "hostname": "csrslave",
+    "platform": "Linux-6.2.0-39-generic-x86_64-with-glibc2.35",
+    "system": "Linux",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "python_version": "3.11.16",
+    "python_implementation": "CPython"
+  },
+  "hardware": {
+    "device": "cuda",
+    "cuda_available": true,
+    "device_count": 1,
+    "torch_version": "2.6.0+cu124",
+    "torch_cuda_version": "12.4",
+    "bf16_supported": true,
+    "devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA RTX A6000",
+        "total_memory_gib": 47.53,
+        "compute_capability": "8.6",
+        "multi_processor_count": 84
+      }
+    ]
+  },
+  "packages": {
+    "torch": "2.6.0+cu124",
+    "numpy": "2.4.6",
+    "transformers": "5.16.1",
+    "datasets": "5.0.1",
+    "accelerate": "1.14.0",
+    "peft": null,
+    "trl": "1.12.0",
+    "bitsandbytes": null,
+    "hydra": "1.3.5",
+    "omegaconf": "2.3.1",
+    "wandb": "0.29.0"
+  },
+  "paths": {
+    "repo_root": "/data/home/rsoumyadeep/AlignLab",
+    "output_root": "/data/home/rsoumyadeep/AlignLab/outputs",
+    "checkpoint_root": "/data/home/rsoumyadeep/AlignLab/checkpoints",
+    "cache_root": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface"
+  },
+  "env_vars": {
+    "ALIGNLAB_ENV": null,
+    "ALIGNLAB_OUTPUT_ROOT": null,
+    "ALIGNLAB_CKPT_ROOT": null,
+    "ALIGNLAB_CACHE_ROOT": null,
+    "ALIGNLAB_RUN_NAME": null,
+    "HF_HOME": null,
+    "HF_HUB_CACHE": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface/hub",
+    "HF_DATASETS_CACHE": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface/datasets",
+    "TRANSFORMERS_CACHE": null,
+    "WANDB_MODE": null,
+    "WANDB_DIR": null,
+    "CUDA_VISIBLE_DEVICES": "0",
+    "SLURM_JOB_ID": null,
+    "SLURM_JOB_NAME": null,
+    "SLURM_NNODES": null,
+    "SLURM_NTASKS": null,
+    "PYTHONHASHSEED": "42",
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "OMP_NUM_THREADS": null
+  },
+  "python_executable": "/data/home/rsoumyadeep/AlignLab/.venv/bin/python",
+  "notes": {
+    "phase": 3,
+    "model_id": "Qwen/Qwen2.5-1.5B",
+    "model_revision": "8faed761d45a263340a0528343f099c05c9a4323",
+    "model_parameters": 1543714304,
+    "model_trainable_parameters": 1543714304,
+    "dtype": "torch.bfloat16",
+    "dataset": {
+      "name": "HuggingFaceH4/no_robots",
+      "revision": "main",
+      "train_split": "train",
+      "eval_split": "test",
+      "seed": 42,
+      "train_rows_before_filter": 9500,
+      "train_rows_dropped": 1,
+      "eval_rows_before_filter": 500,
+      "eval_rows_dropped": 0,
+      "train_rows": 9499,
+      "eval_rows": 200,
+      "train_fingerprint": {
+        "name": "HuggingFaceH4/no_robots",
+        "split": "train",
+        "revision": "main",
+        "n_rows": 9499,
+        "n_chars": 12777129,
+        "sha256": "17bebb1758a66958aaf4ba166438c6c48edba46a78a104c05f2913570f011178"
+      },
+      "eval_fingerprint": {
+        "name": "HuggingFaceH4/no_robots",
+        "split": "test",
+        "revision": "main",
+        "n_rows": 200,
+        "n_chars": 281029,
+        "sha256": "762160ae5ca3cde3c62874d4792576c85ad6d45b8ec6632e7b166bcec5f0b40e"
+      }
+    },
+    "loss_mask_verified": {
+      "examples_checked": 3,
+      "all_boundaries_agree": true,
+      "fully_masked_examples": 0,
+      "findings": [
+        {
+          "index": 0,
+          "n_tokens": 236,
+          "n_active": 23,
+          "active_fraction": 0.0975,
+          "trl_boundary": 213,
+          "independent_boundary": 213,
+          "boundary_agrees": true,
+          "active_text_head": "Scientists are studying nests hoping to learn about transitional habitats that could help restore the shoreline of San F"
+        },
+        {
+          "index": 1,
+          "n_tokens": 245,
+          "n_active": 197,
+          "active_fraction": 0.8041,
+          "trl_boundary": 48,
+          "independent_boundary": 48,
+          "boundary_agrees": true,
+          "active_text_head": "Dear Future Self,\n\nI hope you're happy and proud of what you've achieved. As I write this, I'm excited to think about ou"
+        },
+        {
+          "index": 2,
+          "n_tokens": 514,
+          "n_active": 452,
+          "active_fraction": 0.8794,
+          "trl_boundary": 62,
+          "independent_boundary": 62,
+          "boundary_agrees": true,
+          "active_text_head": "Today marks a new day in not only American history but world history. We are no longer alone in the universe. Life outsi"
+        }
+      ]
+    },
+    "prefix_consistency": {
+      "rows_sampled": 300,
+      "rows_total": 9499,
+      "inconsistent": 0,
+      "inconsistent_rate": 0.0,
+      "inconsistent_indices": []
+    },
+    "truncation_audit": {
+      "examples": 9436,
+      "max_length": 1024,
+      "at_or_over_limit": 100,
+      "at_limit_fraction": 0.0106,
+      "zero_active_examples": 0,
+      "zero_active_fraction": 0.0,
+      "tokens_total": 2699784,
+      "active_tokens_total": 1679946,
+      "active_token_fraction": 0.6223,
+      "length_p50": 239,
+      "length_max": 1024
+    },
+    "completion_only_loss": true,
+    "estimated_checkpoint_bytes": 21612000256,
+    "deferred": "USER explain-back checkpoints - see docs/phase3"
+  }
+}

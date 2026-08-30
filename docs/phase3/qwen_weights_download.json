@@ -1,0 +1,40 @@
+{
+  "all_files_match": true,
+  "disk_after": {
+    "free_bytes": 101067132928,
+    "free_gib": 94.126,
+    "path": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface/hub",
+    "percent_used": 93.69,
+    "total_bytes": 7937302376448,
+    "total_gib": 7392.189,
+    "used_bytes": 7436140376064
+  },
+  "expected_files": {
+    "LICENSE": 11343,
+    "config.json": 684,
+    "generation_config.json": 138,
+    "merges.txt": 1671839,
+    "model.safetensors": 3087467144,
+    "tokenizer.json": 7031645,
+    "tokenizer_config.json": 7228,
+    "vocab.json": 2776833
+  },
+  "hub_cache": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface/hub",
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "observed_files": {
+    "LICENSE": 11343,
+    "config.json": 684,
+    "generation_config.json": 138,
+    "merges.txt": 1671839,
+    "model.safetensors": 3087467144,
+    "tokenizer.json": 7031645,
+    "tokenizer_config.json": 7228,
+    "vocab.json": 2776833
+  },
+  "recorded_utc": "2026-08-30T04:30:11.489828+00:00",
+  "revision": "8faed761d45a263340a0528343f099c05c9a4323",
+  "revision_pinned": true,
+  "snapshot_dir": "/data/home/rsoumyadeep/AlignLab/.cache/huggingface/hub/models--Qwen--Qwen2.5-1.5B/snapshots/8faed761d45a263340a0528343f099c05c9a4323",
+  "total_bytes": 3098966854,
+  "total_gib": 2.8861
+}
