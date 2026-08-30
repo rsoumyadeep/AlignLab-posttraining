@@ -44,6 +44,49 @@ HYPOTHESES, recorded before running:
         LoRA@2e-5 is worst because the LR is too low for adapters starting at
         zero
 
+OUTCOMES, recorded after the run. Hypotheses above are preserved as written.
+
+    H1  HOLDS. All three PEFT arms train exactly 4,358,144 parameters
+        (0.2815% of the logical total).
+
+    H2  HOLDS. QLoRA 2.88 GiB vs LoRA 4.72 GiB peak allocated - 39% less.
+
+    H3  **DISPROVED.** QLoRA ran 1044 s against LoRA's 1055 s: 1% FASTER, not
+        slower. But the honest reading is NOT "QLoRA is faster" - a 1% gap
+        with one run per arm is indistinguishable from run-to-run variation.
+        The correct conclusion is that at this scale the dequantization
+        overhead is NOT DETECTABLE above noise. Note the smoke runs did show
+        QLoRA 16% slower (16.25 s vs 13.99 s over 20 steps), where the
+        one-off cost of quantizing 1.5B weights at load dominates a short run
+        and does not represent steady-state throughput.
+
+    H4  HOLDS. 2.886 GiB vs 0.027 GiB = 107x.
+
+    H5  HOLDS, on eval loss: full SFT 1.9893 < LoRA@2e-4 2.0402 <
+        LoRA@2e-5 2.0718. The LR effect (0.032 nats) is about 60% the size of
+        the LoRA-vs-full-FT gap (0.051 nats), which is why running both LRs
+        mattered - reporting only the LR-matched arm would have overstated
+        LoRA's cost by roughly half.
+
+THE FINDING THAT MATTERS MOST, and which none of the hypotheses anticipated:
+
+    model              completion ppl   stopped   emitted <|im_end|>
+    base                        8.541       1/4                  0/4
+    full SFT                    7.199       4/4                  4/4
+    LoRA  r=16 @2e-4            7.449       0/4                  0/4
+    LoRA  r=16 @2e-5            7.624       0/4                  0/4
+    QLoRA r=16 @2e-4            7.511       0/4                  0/4
+
+Perplexity says the arms are near-equivalent - LoRA is 3.5% worse than full
+SFT. Stop-token behaviour says they are not remotely equivalent: full
+fine-tuning learned to terminate on every prompt, and NO PEFT arm learned it on
+any prompt. All three PEFT models write fluent, on-topic answers and then run
+to the token cap.
+
+This is PROJECT_INSTRUCTIONS section 7's warning made concrete: a single metric
+would have concluded these methods are interchangeable here. E20 investigates
+the mechanism.
+
 Run (server):
     python scripts/experiments/e19_peft_comparison.py
 """
@@ -405,6 +448,40 @@ def main() -> int:
             print(f"\n  [{label}] ({sample['n_generated']} tok, "
                   f"im_end={sample['emitted_im_end']})")
             print(f"    {body}")
+
+    # --------------------------------------------------- merge precision
+    merge_precision = None
+    if not args.skip_eval:
+        print("\n--- MERGE PRECISION: is folding the adapter in actually free? ---")
+        merge_precision = measure_merge_precision(
+            "lora-r16-lr2e-4-001", ckpt_root, device
+        )
+        if merge_precision:
+            for name, d in merge_precision.items():
+                print(f"  {name:<10} merged vs unmerged logits: "
+                      f"max {d['max']:.4e}  mean {d['mean']:.4e}")
+            ratio = merge_precision["bfloat16"]["mean"] / max(
+                merge_precision["float32"]["mean"], 1e-12
+            )
+            print(f"  bf16 is {ratio:,.0f}x less exact than fp32.")
+            print("  CAUSE: ||dW||/||W|| ~ 0.003 (E17) sits at the resolution of")
+            print("  bf16's ~8-bit mantissa, so most of the update rounds away when")
+            print("  added to the much larger base weight.")
+            print("  CONSEQUENCE: 'merge for zero inference overhead' is exact in")
+            print("  fp32 and approximate in bf16. Evaluation above uses UNMERGED")
+            print("  models so this artefact is not attributed to a training arm.")
+
+    # ------------------------------------------- the stop-token capability gap
+    print("\n--- THE RESULT PERPLEXITY ALMOST HIDES ---")
+    if evaluation:
+        print(f"  {'model':<24} {'ppl':>8} {'stopped':>9} {'im_end':>8}")
+        for label, data in evaluation.items():
+            print(f"  {label:<24} {data['completion_ppl']:>8.3f} "
+                  f"{data['stopped']}/4{'':>5} {data['emitted_im_end']}/4")
+        print()
+        print("  Perplexity separates the arms by a few percent. Stop-token")
+        print("  behaviour separates them completely. Reporting only perplexity")
+        print("  would have called the arms near-equivalent.")
 
     print("\n" + "=" * 100)
     print("WHAT THIS SHOWS / DOES NOT SHOW")
