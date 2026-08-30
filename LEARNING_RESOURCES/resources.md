@@ -11,6 +11,56 @@ An honest register of external resources. Status vocabulary is fixed:
 
 ---
 
+## Consolidated index (Phase 8, 2026-08-30)
+
+**The per-phase files are authoritative.** This page began as the Phase 1B
+register and its "everything is NOT INSPECTED" note below is preserved because
+it was **true as of Phase 1B** — it is history, not a current claim.
+
+| Phase | File | What it covers |
+|---|---|---|
+| 2 | [`phase2_resources.md`](phase2_resources.md) | attention, RoPE, normalisation, Flash, architecture families |
+| 3 | [`phase3_resources.md`](phase3_resources.md) | TRL, ChatML, loss masking, `no_robots` |
+| 4 | [`phase4_resources.md`](phase4_resources.md) | LoRA, QLoRA/NF4, `peft`, `bitsandbytes`, SVD |
+| 5 | [`phase5_resources.md`](phase5_resources.md) | RLHF, PPO, Bradley-Terry, UltraFeedback |
+| 6 | [`phase6_resources.md`](phase6_resources.md) | the DPO paper, KL estimators |
+| 7 | [`phase7_resources.md`](phase7_resources.md) | MT-Bench / LLM-as-judge, Wilson intervals |
+
+**Totals across all phases:** 18 `PARTIALLY INSPECTED` · 15 `ACTUALLY
+INSPECTED` · 11 `NOT INSPECTED` · 2 `NOT READ FROM A SOURCE`.
+
+### Access-status vocabulary, at the granularity Phase 8 asks for
+
+The per-phase files use a four-term vocabulary; the finer distinctions the
+Phase 8 brief names map onto it as follows, and **each entry states in prose
+exactly which parts were read**:
+
+| Phase 8 term | How it appears here |
+|---|---|
+| full text read | **NOT USED — no paper in this project was read end to end.** |
+| abstract inspected | `PARTIALLY INSPECTED`, with the prose naming "abstract only" |
+| documentation inspected | `ACTUALLY INSPECTED`, naming the specific docs page or docstring |
+| repository inspected | `ACTUALLY INSPECTED`, naming the source file read |
+| inaccessible | `NOT ACCESSIBLE` — an attempt was made and failed |
+| not inspected | `NOT INSPECTED` — no attempt made |
+
+**No source in this project is recorded as "paper read".** The most-inspected
+paper is MT-Bench (arXiv 2306.05685): abstract in full, plus the position-bias
+section and Table 2 — recorded as `PARTIALLY INSPECTED`, with the unread parts
+named. The DPO paper's derivation was checked against our implementation; the
+paper was **not** read end to end.
+
+Two items are `NOT READ FROM A SOURCE`: the Wilson score interval and the
+`k3` KL estimator, both implemented from standing knowledge and **verified
+numerically instead**, with the verification recorded rather than a citation
+we did not open.
+
+**The single most consequential gap remains AlpacaEval's length-controlled win
+rate — `NOT INSPECTED`** — which addresses exactly the length bias Phases 5–7
+kept measuring.
+
+---
+
 ## ⚠ Status of this register as of Phase 1B (2026-08-29)
 
 **Every external resource below is still `NOT INSPECTED`.**
