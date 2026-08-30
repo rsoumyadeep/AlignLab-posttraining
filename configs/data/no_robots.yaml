@@ -1,0 +1,21 @@
+# HuggingFaceH4/no_robots - 10k human-written instruction examples.
+#
+# WHY THIS DATASET. Written by human annotators rather than distilled from
+# another model, 21 MiB rather than gigabytes on a volume with under 100 GiB
+# free, and it ships an official train/test split so the validation set is not
+# something we invented. See src/alignlab/data.py for the full rationale.
+
+name: HuggingFaceH4/no_robots
+revision: main
+
+train_split: train_sft
+eval_split: test_sft
+
+# null means "the whole split". Subsampling is SHUFFLED with the global seed,
+# never head-truncated: no_robots is grouped by category, so select(range(N))
+# would silently bias the task mix.
+max_train: null
+
+# The eval split is 500 rows; 200 keeps the periodic eval cheap enough to run
+# often. The FINAL evaluation uses the full split.
+max_eval: 200

@@ -1,0 +1,42 @@
+# AlignLab Phase 3 - supervised fine-tuning root configuration.
+#
+#   python -m alignlab.sft env=server
+#   python -m alignlab.sft env=server sft=smoke
+#   python -m alignlab.sft env=server sft.learning_rate=1e-5 data.max_train=2000
+#
+# A separate root from configs/config.yaml (the Phase 1 smoke test) because
+# the two share only storage, logging, tracking and seeding.
+
+defaults:
+  - _self_
+  - env: local
+  - model: qwen2_5_1_5b
+  - data: no_robots
+  - sft: default
+  - logging: default
+  - tracking: noop
+  # AlignLab installs its own handlers; Hydra's would add a second log file.
+  - override hydra/job_logging: none
+  - override hydra/hydra_logging: none
+
+run_name: ""
+experiment: sft
+
+reproducibility:
+  seed: 42
+  deterministic: false
+
+# Refuse to start if the volume cannot hold this run's checkpoints. The
+# department server sits at 99% used and is shared with eight other users, so
+# this defaults ON. See docs/phase1/STORAGE_POLICY.md and alignlab.storage.
+storage_guard: true
+allow_low_disk: false
+
+extras: {}
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
+  job:
+    chdir: false

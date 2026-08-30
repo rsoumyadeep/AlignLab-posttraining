@@ -1,0 +1,32 @@
+# Qwen2.5-1.5B BASE model (not -Instruct).
+#
+# EVERY VALUE BELOW THAT DESCRIBES THE ARCHITECTURE IS READ FROM THE
+# DOWNLOADED config.json AT RUNTIME, NOT FROM THIS FILE. Phase 2 predicted
+# three architecture details wrongly (FFN width 5.83x not 8/3, rope_theta 1e6
+# not 1e4, and QKV bias present), and Phase 3's E11 found the parameter count
+# short by exactly the omitted QKV bias terms. Duplicating architecture numbers
+# into a config file is how those errors propagate, so this file carries only
+# the IDENTITY of the model and how to load it.
+
+id: Qwen/Qwen2.5-1.5B
+
+# PINNED. Resolved from the HF API on 2026-08-29, re-confirmed 2026-08-30 as
+# identical to main. Without this a rerun six months from now is a different
+# experiment wearing the same name.
+revision: 8faed761d45a263340a0528343f099c05c9a4323
+
+# "auto" -> bfloat16 on CUDA (the A6000s are Ampere and bf16-capable, VERIFIED
+# in Phase 1B), float32 on CPU. Never float16 by default: bf16 has the same
+# exponent range as fp32 and does not need loss scaling.
+dtype: auto
+
+# sdpa is PyTorch's fused scaled-dot-product attention. Phase 2's E10 measured
+# its FLASH backend at 56x faster and 147x less memory than MATH at T=4096.
+# "flash_attention_2" is NOT used: the flash-attn package is unbuildable on the
+# server (no nvcc, no root) - recorded in the Phase 2 limitations.
+attn_implementation: sdpa
+
+# Trades compute for memory by recomputing activations in the backward pass.
+# On by default because it is what makes a 1.5B full fine-tune fit comfortably
+# alongside eight other users on a shared GPU.
+gradient_checkpointing: true

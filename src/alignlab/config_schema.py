@@ -119,6 +119,75 @@ class PreemptionConfig:
 
 
 @dataclass
+class ModelConfig:
+    """The pretrained model to fine-tune.
+
+    ``revision`` is not optional metadata. Hugging Face repository ``main``
+    branches move, so a run pinned only by model id is not reproducible. Phase
+    2 recorded the SHA; Phase 3 uses it for every load.
+    """
+
+    id: str = "Qwen/Qwen2.5-1.5B"
+    revision: str = "8faed761d45a263340a0528343f099c05c9a4323"
+    # bfloat16 on Ampere+, float32 on CPU. "auto" resolves from the device.
+    dtype: str = "auto"
+    attn_implementation: str = "sdpa"
+    gradient_checkpointing: bool = True
+
+
+@dataclass
+class DataConfig:
+    """Instruction dataset selection and subsampling."""
+
+    name: str = "HuggingFaceH4/no_robots"
+    revision: str = "main"
+    train_split: str = "train_sft"
+    eval_split: str = "test_sft"
+    # None means "use the whole split". Subsampling is shuffled with the
+    # global seed, never head-truncated - no_robots is grouped by category, so
+    # taking the first N rows would silently bias the task mix.
+    max_train: int | None = None
+    max_eval: int | None = 200
+
+
+@dataclass
+class SFTHyperParams:
+    """Supervised fine-tuning hyperparameters.
+
+    Distinct from TrainConfig, which drives the Phase 1 smoke test. Merging
+    them would force one set of defaults to be wrong for one of the two.
+    """
+
+    max_length: int = 1024
+    per_device_train_batch_size: int = 4
+    per_device_eval_batch_size: int = 4
+    gradient_accumulation_steps: int = 8
+    learning_rate: float = 2.0e-5
+    lr_scheduler_type: str = "cosine"
+    warmup_ratio: float = 0.03
+    weight_decay: float = 0.0
+    max_grad_norm: float = 1.0
+    num_train_epochs: float = 1.0
+    # -1 means "use num_train_epochs". A positive value caps the run, which is
+    # what keeps a first run on a shared, storage-constrained server short.
+    max_steps: int = -1
+    logging_steps: int = 5
+    eval_steps: int = 50
+    save_steps: int = 100
+    save_total_limit: int = 1
+    seed: int = 42
+    # packing concatenates examples to fill the context. It raises throughput
+    # and makes the loss mask far harder to verify by hand, so Phase 3 leaves
+    # it OFF deliberately - see docs/phase3. This is a verifiability-over-speed
+    # decision, recorded rather than defaulted into.
+    packing: bool = False
+    # None lets TRL auto-resolve from the dataset shape (True for
+    # prompt/completion). Set explicitly only to demonstrate the broken arm.
+    completion_only_loss: bool | None = None
+    resume: bool = True
+
+
+@dataclass
 class AlignLabConfig:
     """Top-level configuration."""
 
@@ -137,6 +206,35 @@ class AlignLabConfig:
     extras: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class SFTExperimentConfig:
+    """Top-level configuration for the Phase 3 SFT entrypoint.
+
+    A separate root from AlignLabConfig rather than an extension of it: the
+    Phase 1 smoke test and a 1.5B fine-tune share storage, logging, tracking
+    and seeding, but nothing else. Bolting model/data groups onto the smoke
+    test's schema would make every Phase 1 config carry fields it must ignore.
+    """
+
+    env: EnvConfig = field(default_factory=EnvConfig)
+    model: ModelConfig = field(default_factory=ModelConfig)
+    data: DataConfig = field(default_factory=DataConfig)
+    sft: SFTHyperParams = field(default_factory=SFTHyperParams)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
+    tracking: TrackingConfig = field(default_factory=TrackingConfig)
+    reproducibility: ReproducibilityConfig = field(
+        default_factory=ReproducibilityConfig
+    )
+
+    run_name: str = ""
+    experiment: str = "sft"
+    # Refuse to start unless the volume can hold the checkpoints this run will
+    # write. Overridable, but never silently.
+    storage_guard: bool = True
+    allow_low_disk: bool = False
+    extras: dict[str, Any] = field(default_factory=dict)
+
+
 def register_configs() -> None:
     """Register the schema with Hydra's ConfigStore.
 
@@ -146,3 +244,4 @@ def register_configs() -> None:
 
     store = ConfigStore.instance()
     store.store(name="alignlab_schema", node=AlignLabConfig)
+    store.store(name="alignlab_sft_schema", node=SFTExperimentConfig)

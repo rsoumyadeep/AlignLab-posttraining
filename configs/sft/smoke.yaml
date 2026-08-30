@@ -1,0 +1,29 @@
+# A deliberately tiny SFT run - the Phase 3 equivalent of the Phase 1 smoke
+# test. Exercises the whole pipeline (data, mask, train, checkpoint, resume,
+# eval) in minutes so that a real run is not the first time the wiring is
+# tested. NOT a meaningful experiment: 20 steps changes little, and any result
+# from this config must be labelled as a smoke test, never as evidence.
+
+max_length: 512
+per_device_train_batch_size: 2
+per_device_eval_batch_size: 2
+gradient_accumulation_steps: 2
+
+learning_rate: 2.0e-5
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+weight_decay: 0.0
+max_grad_norm: 1.0
+
+num_train_epochs: 1.0
+max_steps: 20
+
+logging_steps: 2
+eval_steps: 10
+save_steps: 10
+save_total_limit: 1
+
+seed: 42
+packing: false
+completion_only_loss: null
+resume: true

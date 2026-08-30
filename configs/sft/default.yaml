@@ -1,0 +1,46 @@
+# Phase 3 SFT hyperparameters for a full-parameter fine-tune of Qwen2.5-1.5B.
+
+max_length: 1024
+
+# Effective batch = 4 x 8 = 32 sequences. Chosen to fit one A6000 alongside
+# other users rather than to maximise throughput; the server is shared and
+# nothing reserves a GPU.
+per_device_train_batch_size: 4
+per_device_eval_batch_size: 4
+gradient_accumulation_steps: 8
+
+# 2e-5 is the conventional full fine-tune LR for a model this size. It is a
+# STARTING POINT, not a tuned value - no LR sweep has been run, and the Phase 3
+# report records that as a limitation rather than implying the value is optimal.
+learning_rate: 2.0e-5
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+weight_decay: 0.0
+max_grad_norm: 1.0
+
+num_train_epochs: 1.0
+max_steps: -1          # -1 -> use num_train_epochs
+
+logging_steps: 5
+eval_steps: 50
+save_steps: 100
+
+# STORAGE-BOUND, not a quality decision. A full-parameter checkpoint here is
+# ~20.1 GiB (measured estimate, alignlab.storage). Keeping more than one would
+# consume most of the server's free space from a single run.
+save_total_limit: 1
+
+seed: 42
+
+# OFF DELIBERATELY. Packing concatenates examples to fill the context window,
+# which raises throughput substantially - and makes the loss mask far harder to
+# verify by hand, because example boundaries stop aligning with sequence
+# boundaries. Phase 3's whole point is a verified mask (E12), so verifiability
+# wins here. Revisit for Phase 4, where the mask is already trusted.
+packing: false
+
+# null lets TRL resolve from the dataset shape: True for prompt/completion.
+# E12 verifies that resolution rather than assuming it.
+completion_only_loss: null
+
+resume: true
