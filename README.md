@@ -22,18 +22,20 @@ the work can be reproduced, explained, defended and extended.
 
 ---
 
-## ⚠ Current status — Phase 1 complete (1A local + 1B server)
+## Current status — Phase 3 (SFT) complete
 
-This repository currently contains **the engineering foundation only**.
+**Phase 1** built the engineering foundation. **Phase 2** built the Transformer
+components from first principles: attention in PyTorch/NumPy/pure Python,
+RoPE/ALiBi/sinusoidal, RMSNorm, SwiGLU, a decoder-only model, a KV cache, and
+five decoding strategies.
 
-**Phase 2 added the Transformer components**, built from first principles:
-attention in PyTorch/NumPy/pure Python, RoPE/ALiBi/sinusoidal, RMSNorm, SwiGLU,
-a decoder-only model, a KV cache, and five decoding strategies.
+**Phase 3 fine-tunes the real model.** Qwen2.5-1.5B weights (2.886 GiB, pinned
+revision `8faed761`) are downloaded, and the base model is supervised
+fine-tuned on `HuggingFaceH4/no_robots` using TRL's `SFTTrainer` — with the
+loss mask verified against an independent computation before every run, because
+PROJECT_INSTRUCTIONS §3 makes that a precondition for PEFT.
 
-**No Qwen weights have been downloaded** — only 8 KB of configuration metadata,
-at a pinned revision, for architecture reconciliation. No SFT, no LoRA, no DPO,
-no instruction dataset. The only model trained is a 334k-parameter educational
-LM on locally generated synthetic grammar, used for two experiments.
+No LoRA, no QLoRA, no DPO yet.
 
 | Phase | Status |
 |---|---|
@@ -41,7 +43,7 @@ LM on locally generated synthetic grammar, used for two experiments.
 | 1B — Foundation (server) | ✅ **COMPLETE**, 110 passed / 1 skipped on GPU server |
 | 1C — Version alignment, storage policy, path-wiring fix | ✅ **COMPLETE** |
 | 2 — Transformer understanding | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
-| 3 — SFT | ⬜ not started |
+| 3 — SFT | ✅ **COMPLETE** (impl/exp/docs); USER explain-backs deferred |
 | 4 — PEFT (LoRA / QLoRA) | ⬜ not started |
 | 5 — Preference learning / RLHF | ⬜ not started |
 | 6 — DPO | ⬜ not started |
@@ -86,7 +88,7 @@ uv venv --python 3.11 .venv
 uv pip install -e ".[tracking,dev]"          # local: CPU torch
 
 python scripts/env_report.py          # what this machine actually has
-python -m pytest -q                   # 288 passed, 2 skipped
+python -m pytest -q                   # 347 passed, 2 skipped
 python -m alignlab.train              # foundation smoke run (toy model)
 ```
 
@@ -105,7 +107,7 @@ uv venv --python 3.11 .venv
 UV_CACHE_DIR=/tmp/uv-cache uv pip install \n    --index-url https://download.pytorch.org/whl/cu124 torch
 UV_CACHE_DIR=/tmp/uv-cache uv pip install -e ".[tracking,dev]"
 
-.venv/bin/python -m pytest -q                       # 289 passed, 1 skipped
+.venv/bin/python -m pytest -q                       # 347 passed, 1 skipped
 CUDA_VISIBLE_DEVICES=0 .venv/bin/python -m alignlab.train env=server
 ```
 
@@ -121,9 +123,11 @@ src/alignlab/       foundation modules (see CODE_EXPLANATION/phase1/)
 src/alignlab/models/ Transformer components, Phase 2 (attention x3, RoPE/ALiBi,
                      RMSNorm, SwiGLU, decoder-only model, KV cache, decoding)
 configs/            Hydra tree; env/ group absorbs machine differences
-tests/              290 tests; no network or credentials needed
+tests/              349 tests; no network or credentials needed
 scripts/            env_report.py, server_probe.sh (executed on csrslave)
 docs/phase1/        phase reports, storage policy, server probe evidence
+docs/phase2/        Phase 2 report + verbatim GPU experiment output
+docs/phase3/        Phase 3 report, weight-download evidence, before/after eval
 
 STUDY_WITH_CLAUDE/  theory, intuition, derivations + USER checkpoints
 CODE_EXPLANATION/   what the code actually does (never imagined code)
@@ -169,10 +173,14 @@ bitwise cross-machine agreement (~1e-7 divergence remains, platform/BLAS-level),
 but it removes API and default drift between torch majors — which is what
 actually threatened Tier B.
 
-**Storage:** `/data` on the server is 99% full. See
-[`docs/phase1/STORAGE_POLICY.md`](docs/phase1/STORAGE_POLICY.md) — a full-SFT
-resumable checkpoint is an estimated **~15.5 GB**, so `keep_last_checkpoints: 3`
-would consume ~46 GB from one run. Lower it for full SFT.
+**Storage:** `/data` on the server is 99% full and shared with 8 users. See
+[`docs/phase1/STORAGE_POLICY.md`](docs/phase1/STORAGE_POLICY.md). Phase 3
+replaced the estimate with a **measurement**: a resumable full-SFT checkpoint
+for Qwen2.5-1.5B is **8.63 GiB** (2.00 B/param bf16 weights + 4.00 B/param bf16
+AdamW moments), not the ~15.5-20 GB estimated. `alignlab.storage` keeps the
+conservative estimate as its default anyway — a guard that under-predicts fails
+mid-write, which is not symmetric with refusing a run that would have fitted —
+and now **refuses to start** a run whose checkpoints would not fit.
 
 ---
 

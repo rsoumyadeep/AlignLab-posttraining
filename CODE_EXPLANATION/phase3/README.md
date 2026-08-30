@@ -150,7 +150,7 @@ than 26 prompt positions it agrees to 1.6e-07.
 The same 57,344 error propagated one file further and was only caught when the
 estimates were checked against a real checkpoint file.
 
-### 6f. Three transformers 5.x / TRL 1.x API breaks
+### 6f. Four transformers 5.x / TRL 1.x API breaks
 - `cfg.rope_theta` no longer exists → `cfg.rope_parameters["rope_theta"]`
 - `SFTConfig.warmup_ratio` removed → only `warmup_steps`; AlignLab keeps the
   ratio as its knob and converts
@@ -194,4 +194,4 @@ builder exposes `train`/`test`. Verified against the live builder afterwards.
 | **unmasked trains strictly more** | `e12` arm B (server) |
 | corrected parameter formula is exact | `e11` (server) |
 
-Local suite: **345 passed, 2 skipped**. Server: **345 passed, 1 skipped**.
+Local suite: **347 passed, 2 skipped**. Server: **347 passed, 1 skipped**.
