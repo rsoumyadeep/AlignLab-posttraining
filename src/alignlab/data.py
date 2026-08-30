@@ -167,7 +167,40 @@ def to_prompt_completion(example: dict[str, Any]) -> dict[str, Any]:
     messages = example.get("messages") or []
     if len(messages) < 2 or messages[-1].get("role") != "assistant":
         return {"prompt": [], "completion": []}
-    return {"prompt": list(messages[:-1]), "completion": [messages[-1]]}
+
+    final = dict(messages[-1])
+    final["content"] = _strip_boundary_whitespace(final.get("content") or "")
+    return {"prompt": list(messages[:-1]), "completion": [final]}
+
+
+def _strip_boundary_whitespace(content: str) -> str:
+    """Remove leading/trailing whitespace from a completion. NOT cosmetic.
+
+    THE BUG THIS FIXES, found by check_prefix_consistency on a real run and
+    independently warned about by TRL ("Mismatch between tokenized prompt and
+    the start of tokenized prompt+completion").
+
+    The ChatML prompt ends with ``<|im_start|>assistant\\n`` - token 198, a
+    lone newline. When a completion then STARTS with newlines, BPE merges
+    across the boundary: the template's ``\\n`` plus the completion's ``\\n\\n``
+    become the single token 1406 (``'\\n\\n\\n'``). Tokenizing the prompt alone
+    therefore does NOT yield a prefix of tokenizing prompt+completion, and
+    every boundary-based loss mask - TRL's and ours alike - lands on a token
+    that is half prompt and half answer.
+
+    Measured on 200 no_robots rows: 3 affected (1.5%), each losing or
+    corrupting exactly one boundary token. Small, silent, and the kind of
+    thing that is never found by looking at a loss curve.
+
+    Stripping is the right fix rather than a workaround: the leading newlines
+    are REDUNDANT with the newline the template already emits, and training on
+    them teaches the model to open its answers with blank lines. Removing them
+    both fixes the tokenization and improves the target.
+
+    Trailing whitespace cannot cause a merge (``<|im_end|>`` is a special token
+    and never merges), but is stripped for symmetry and tidiness.
+    """
+    return content.strip()
 
 
 def is_wellformed(example: dict[str, Any]) -> bool:

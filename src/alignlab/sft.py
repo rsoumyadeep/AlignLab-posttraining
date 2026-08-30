@@ -54,7 +54,12 @@ from alignlab.data import fingerprint_dataset, load_instruction_dataset
 from alignlab.device import describe_hardware, resolve_device
 from alignlab.logging_utils import get_logger, setup_logging
 from alignlab.manifest import capture_environment
-from alignlab.masking import IGNORE_INDEX, describe_mask, expected_labels
+from alignlab.masking import (
+    IGNORE_INDEX,
+    check_prefix_consistency,
+    describe_mask,
+    expected_labels,
+)
 from alignlab.paths import (
     checkpoint_root,
     configure_hf_cache,
@@ -89,6 +94,59 @@ def resolve_dtype(requested: str, device: torch.device) -> torch.dtype:
     if device.type == "cuda" and torch.cuda.is_bf16_supported():
         return torch.bfloat16
     return torch.float32
+
+
+def audit_prefix_consistency(tokenizer, dataset, sample: int = 300, seed: int = 0) -> dict:
+    """Count rows where prompt tokens are NOT a prefix of prompt+completion.
+
+    THIS AUDIT EXISTS BECAUSE THE FIRST REAL RUN FAILED IT. TRL emitted
+    "Mismatch between tokenized prompt and the start of tokenized
+    prompt+completion" and 3 of 200 rows were affected: completions beginning
+    with newlines let BPE merge the template's trailing newline into the first
+    completion token, so the mask boundary landed on a token that was half
+    prompt and half answer. alignlab.data now strips that whitespace, and this
+    audit is what proves the fix holds for the data actually being trained on.
+
+    Sampled rather than exhaustive: this tokenizes each row twice more on top
+    of what TRL already does, which is not free on 9,500 rows. A seeded sample
+    of 300 detects a 1% defect rate with high probability while staying cheap
+    enough to run on every training run.
+    """
+    import random
+
+    n = len(dataset)
+    indices = list(range(n))
+    if n > sample:
+        random.Random(seed).shuffle(indices)
+        indices = indices[:sample]
+
+    inconsistent = []
+    for i in indices:
+        row = dataset[i]
+        ok, _, _ = check_prefix_consistency(tokenizer, row["prompt"], row["completion"])
+        if not ok:
+            inconsistent.append(i)
+
+    result = {
+        "rows_sampled": len(indices),
+        "rows_total": n,
+        "inconsistent": len(inconsistent),
+        "inconsistent_rate": round(len(inconsistent) / max(len(indices), 1), 5),
+        "inconsistent_indices": inconsistent[:20],
+    }
+    if inconsistent:
+        logger.warning(
+            "PREFIX INCONSISTENCY: %d/%d sampled rows tokenize such that the "
+            "prompt is NOT a prefix of prompt+completion. Boundary-based loss "
+            "masks are wrong by a token on those rows. Indices: %s",
+            len(inconsistent), len(indices), inconsistent[:20],
+        )
+    else:
+        logger.info(
+            "prefix consistency: %d/%d sampled rows OK - boundary masks are sound",
+            len(indices), len(indices),
+        )
+    return result
 
 
 def verify_mask_on_real_batch(trainer, tokenizer, dataset, n_examples: int = 3) -> dict:
@@ -379,6 +437,9 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
     logger.info("TRL resolved completion_only_loss -> %s", trainer.completion_only_loss)
 
     # ------------------------------------------- verify BEFORE the first step
+    prefix_audit = audit_prefix_consistency(
+        tokenizer, train_ds, seed=cfg.reproducibility.seed
+    )
     mask_check = verify_mask_on_real_batch(trainer, tokenizer, train_ds)
     truncation = audit_truncation(trainer, cfg.sft.max_length)
 
@@ -417,6 +478,7 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
             "dtype": str(dtype),
             "dataset": data_info,
             "loss_mask_verified": mask_check,
+            "prefix_consistency": prefix_audit,
             "truncation_audit": truncation,
             "completion_only_loss": bool(trainer.completion_only_loss),
             "estimated_checkpoint_bytes": estimate_checkpoint_bytes(n_params),
@@ -433,7 +495,7 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
         entity=cfg.tracking.entity,
         tags=list(cfg.tracking.tags),
         config=resolved,
-        directory=directory,
+        run_dir=directory,
     )
 
     # ---------------------------------------------------------------- resume
@@ -485,6 +547,7 @@ def run_sft(cfg: DictConfig) -> dict[str, Any]:
         "train_metrics": metrics,
         "eval_metrics": eval_metrics,
         "loss_mask_verified": mask_check,
+        "prefix_consistency": prefix_audit,
         "truncation_audit": truncation,
         "final_model_dir": str(final_dir),
         "final_model_bytes": actual_bytes,
