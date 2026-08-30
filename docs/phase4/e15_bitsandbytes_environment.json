@@ -1,0 +1,51 @@
+{
+  "environment": {
+    "recorded_utc": "2026-08-30T05:36:54.080177+00:00",
+    "hostname": "csrslave",
+    "python": "3.11.16",
+    "torch": "2.6.0+cu124",
+    "torch_cuda": "12.4",
+    "cudnn": 90100,
+    "cuda_available": true,
+    "device_count": 1,
+    "bf16_supported": true,
+    "devices": [
+      {
+        "index": 0,
+        "name": "NVIDIA RTX A6000",
+        "compute_capability": "8.6",
+        "total_memory_gib": 47.53
+      }
+    ],
+    "bitsandbytes": "0.50.2",
+    "peft": "0.20.0",
+    "transformers": "5.16.1",
+    "trl": "1.12.0",
+    "accelerate": "1.14.0",
+    "triton": "3.2.0"
+  },
+  "native_library": "/data/home/rsoumyadeep/AlignLab/.venv/lib/python3.11/site-packages/bitsandbytes/libbitsandbytes_cuda124.so",
+  "quantization": {
+    "nf4": {
+      "mean_abs_err": 0.07277406752109528,
+      "max_abs_err": 0.59375,
+      "relative_err": 0.09120075404644012,
+      "packed_bytes": 8388608
+    },
+    "fp4": {
+      "mean_abs_err": 0.09651990234851837,
+      "max_abs_err": 0.703125,
+      "relative_err": 0.12095912545919418,
+      "packed_bytes": 8388608
+    }
+  },
+  "linear4bit_forward_relative_err": 0.09104042500257492,
+  "storage_ratio": 4.0,
+  "hypotheses": {
+    "H1": true,
+    "H2": true,
+    "H3": true,
+    "H4": true
+  },
+  "usable": true
+}

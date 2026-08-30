@@ -1,0 +1,57 @@
+{
+  "im_end_id": 151645,
+  "eval_fingerprint": {
+    "name": "HuggingFaceH4/no_robots",
+    "split": "test",
+    "revision": "main",
+    "n_rows": 100,
+    "n_chars": 150133,
+    "sha256": "5a354825007d026b37e2b0efc5b00b7b2e6ccb38b757102539a3a84bb1e6e1de"
+  },
+  "results": {
+    "base": {
+      "counted": 100,
+      "mean_prob": 2.8102009661535617e-06,
+      "median_rank": 31600,
+      "argmax_fraction": 0.0,
+      "argmax_hits": 0
+    },
+    "full SFT": {
+      "counted": 100,
+      "mean_prob": 0.39513443629461054,
+      "median_rank": 1,
+      "argmax_fraction": 0.79,
+      "argmax_hits": 79
+    },
+    "LoRA @2e-4": {
+      "counted": 100,
+      "mean_prob": 0.00021032968883332614,
+      "median_rank": 160,
+      "argmax_fraction": 0.0,
+      "argmax_hits": 0
+    },
+    "LoRA @2e-5": {
+      "counted": 100,
+      "mean_prob": 5.580202704007024e-05,
+      "median_rank": 2217,
+      "argmax_fraction": 0.0,
+      "argmax_hits": 0
+    },
+    "QLoRA @2e-4": {
+      "counted": 100,
+      "mean_prob": 0.00019144606947349264,
+      "median_rank": 194,
+      "argmax_fraction": 0.0,
+      "argmax_hits": 0
+    }
+  },
+  "lm_head_movement": {
+    "frobenius_base": 399.894398133446,
+    "frobenius_delta": 5.439981571977106,
+    "relative": 0.013603545329389104
+  },
+  "hypotheses": {
+    "H1_learned_nothing": false,
+    "H2_learned_but_lost_argmax": true
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "dataset": {
+    "eval_fingerprint": {
+      "n_chars": 281029,
+      "n_rows": 200,
+      "name": "HuggingFaceH4/no_robots",
+      "revision": "main",
+      "sha256": "762160ae5ca3cde3c62874d4792576c85ad6d45b8ec6632e7b166bcec5f0b40e",
+      "split": "test"
+    },
+    "eval_rows": 200,
+    "eval_rows_before_filter": 500,
+    "eval_rows_dropped": 0,
+    "eval_split": "test",
+    "name": "HuggingFaceH4/no_robots",
+    "revision": "main",
+    "seed": 42,
+    "train_fingerprint": {
+      "n_chars": 12777129,
+      "n_rows": 9499,
+      "name": "HuggingFaceH4/no_robots",
+      "revision": "main",
+      "sha256": "17bebb1758a66958aaf4ba166438c6c48edba46a78a104c05f2913570f011178",
+      "split": "train"
+    },
+    "train_rows": 9499,
+    "train_rows_before_filter": 9500,
+    "train_rows_dropped": 1,
+    "train_split": "train"
+  },
+  "disk_after": {
+    "free_bytes": 84996337664,
+    "free_gib": 79.159,
+    "path": "/data/home/rsoumyadeep/AlignLab/checkpoints",
+    "percent_used": 93.89,
+    "total_bytes": 7937302376448,
+    "total_gib": 7392.189,
+    "used_bytes": 7452211171328
+  },
+  "estimated_full_checkpoint_bytes": 21612000256,
+  "eval_metrics": {
+    "epoch": 1.0,
+    "eval_entropy": 2.0504826712608337,
+    "eval_loss": 2.0717580318450928,
+    "eval_mean_token_accuracy": 0.546584045290947,
+    "eval_num_tokens": 2699784.0,
+    "eval_runtime": 6.8091,
+    "eval_samples_per_second": 29.372,
+    "eval_steps_per_second": 7.343
+  },
+  "final_model_bytes": 28899119,
+  "final_model_dir": "/data/home/rsoumyadeep/AlignLab/checkpoints/lora-r16-lr2e-5-001/final",
+  "loss_mask_verified": {
+    "all_boundaries_agree": true,
+    "examples_checked": 3,
+    "findings": [
+      {
+        "active_fraction": 0.0975,
+        "active_text_head": "Scientists are studying nests hoping to learn about transitional habitats that could help restore the shoreline of San F",
+        "boundary_agrees": true,
+        "independent_boundary": 213,
+        "index": 0,
+        "n_active": 23,
+        "n_tokens": 236,
+        "trl_boundary": 213
+      },
+      {
+        "active_fraction": 0.8041,
+        "active_text_head": "Dear Future Self,\n\nI hope you're happy and proud of what you've achieved. As I write this, I'm excited to think about ou",
+        "boundary_agrees": true,
+        "independent_boundary": 48,
+        "index": 1,
+        "n_active": 197,
+        "n_tokens": 245,
+        "trl_boundary": 48
+      },
+      {
+        "active_fraction": 0.8794,
+        "active_text_head": "Today marks a new day in not only American history but world history. We are no longer alone in the universe. Life outsi",
+        "boundary_agrees": true,
+        "independent_boundary": 62,
+        "index": 2,
+        "n_active": 452,
+        "n_tokens": 514,
+        "trl_boundary": 62
+      }
+    ],
+    "fully_masked_examples": 0
+  },
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "model_revision": "8faed761d45a263340a0528343f099c05c9a4323",
+  "parameters": 1543714304,
+  "peak_vram_allocated_bytes": 5073415168,
+  "peak_vram_reserved_bytes": 5683281920,
+  "peft": {
+    "alpha": 32.0,
+    "bias": "none",
+    "dropout": 0.05,
+    "full_finetune": false,
+    "method": "lora",
+    "r": 16,
+    "scaling": 2.0,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj"
+    ]
+  },
+  "peft_counts": {
+    "frozen": 1543714304,
+    "logical_total": 1548072448,
+    "quantized_packed_elements": 0,
+    "raw_total": 1548072448,
+    "trainable": 4358144,
+    "trainable_fraction_of_logical": 0.0028152067467064694
+  },
+  "prefix_consistency": {
+    "inconsistent": 0,
+    "inconsistent_indices": [],
+    "inconsistent_rate": 0.0,
+    "rows_sampled": 300,
+    "rows_total": 9499
+  },
+  "run_name": "lora-r16-lr2e-5-001",
+  "train_metrics": {
+    "epoch": 1.0,
+    "train_loss": 2.1161678184897212,
+    "train_runtime": 1053.1224,
+    "train_samples_per_second": 8.96,
+    "train_steps_per_second": 0.28
+  },
+  "trainable_parameters": 1543714304,
+  "truncation_audit": {
+    "active_token_fraction": 0.6223,
+    "active_tokens_total": 1679946,
+    "at_limit_fraction": 0.0106,
+    "at_or_over_limit": 100,
+    "examples": 9436,
+    "length_max": 1024,
+    "length_p50": 239,
+    "max_length": 1024,
+    "tokens_total": 2699784,
+    "zero_active_examples": 0,
+    "zero_active_fraction": 0.0
+  }
+}

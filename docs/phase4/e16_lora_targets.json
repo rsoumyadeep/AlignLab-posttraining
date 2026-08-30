@@ -1,0 +1,196 @@
+{
+  "model_id": "Qwen/Qwen2.5-1.5B",
+  "revision": "8faed761d45a263340a0528343f099c05c9a4323",
+  "total_params": 1543714304,
+  "n_linear_modules": 197,
+  "leaves": {
+    "q_proj": {
+      "count": 28,
+      "in": 1536,
+      "out": 1536,
+      "bias": true
+    },
+    "k_proj": {
+      "count": 28,
+      "in": 1536,
+      "out": 256,
+      "bias": true
+    },
+    "v_proj": {
+      "count": 28,
+      "in": 1536,
+      "out": 256,
+      "bias": true
+    },
+    "o_proj": {
+      "count": 28,
+      "in": 1536,
+      "out": 1536,
+      "bias": false
+    },
+    "gate_proj": {
+      "count": 28,
+      "in": 1536,
+      "out": 8960,
+      "bias": false
+    },
+    "up_proj": {
+      "count": 28,
+      "in": 1536,
+      "out": 8960,
+      "bias": false
+    },
+    "down_proj": {
+      "count": 28,
+      "in": 8960,
+      "out": 1536,
+      "bias": false
+    },
+    "lm_head": {
+      "count": 1,
+      "in": 1536,
+      "out": 151936,
+      "bias": false
+    }
+  },
+  "target_sets": {
+    "q_v_only": {
+      "targets": [
+        "q_proj",
+        "v_proj"
+      ],
+      "matrices": 56,
+      "base_params_covered": 77120512,
+      "per_rank": {
+        "4": {
+          "trainable": 544768,
+          "fraction": 0.00035289431379136846,
+          "bytes_fp32": 2179072,
+          "bytes_bf16": 1089536
+        },
+        "8": {
+          "trainable": 1089536,
+          "fraction": 0.0007057886275827369,
+          "bytes_fp32": 4358144,
+          "bytes_bf16": 2179072
+        },
+        "16": {
+          "trainable": 2179072,
+          "fraction": 0.0014115772551654738,
+          "bytes_fp32": 8716288,
+          "bytes_bf16": 4358144
+        },
+        "32": {
+          "trainable": 4358144,
+          "fraction": 0.0028231545103309477,
+          "bytes_fp32": 17432576,
+          "bytes_bf16": 8716288
+        },
+        "64": {
+          "trainable": 8716288,
+          "fraction": 0.005646309020661895,
+          "bytes_fp32": 34865152,
+          "bytes_bf16": 17432576
+        }
+      }
+    },
+    "attention": {
+      "targets": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj"
+      ],
+      "matrices": 112,
+      "base_params_covered": 154198016,
+      "per_rank": {
+        "4": {
+          "trainable": 1089536,
+          "fraction": 0.0007057886275827369,
+          "bytes_fp32": 4358144,
+          "bytes_bf16": 2179072
+        },
+        "8": {
+          "trainable": 2179072,
+          "fraction": 0.0014115772551654738,
+          "bytes_fp32": 8716288,
+          "bytes_bf16": 4358144
+        },
+        "16": {
+          "trainable": 4358144,
+          "fraction": 0.0028231545103309477,
+          "bytes_fp32": 17432576,
+          "bytes_bf16": 8716288
+        },
+        "32": {
+          "trainable": 8716288,
+          "fraction": 0.005646309020661895,
+          "bytes_fp32": 34865152,
+          "bytes_bf16": 17432576
+        },
+        "64": {
+          "trainable": 17432576,
+          "fraction": 0.01129261804132379,
+          "bytes_fp32": 69730304,
+          "bytes_bf16": 34865152
+        }
+      }
+    },
+    "attention_mlp": {
+      "targets": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ],
+      "matrices": 196,
+      "base_params_covered": 1310253056,
+      "per_rank": {
+        "4": {
+          "trainable": 4616192,
+          "fraction": 0.002990314974758438,
+          "bytes_fp32": 18464768,
+          "bytes_bf16": 9232384
+        },
+        "8": {
+          "trainable": 9232384,
+          "fraction": 0.005980629949516876,
+          "bytes_fp32": 36929536,
+          "bytes_bf16": 18464768
+        },
+        "16": {
+          "trainable": 18464768,
+          "fraction": 0.011961259899033752,
+          "bytes_fp32": 73859072,
+          "bytes_bf16": 36929536
+        },
+        "32": {
+          "trainable": 36929536,
+          "fraction": 0.023922519798067504,
+          "bytes_fp32": 147718144,
+          "bytes_bf16": 73859072
+        },
+        "64": {
+          "trainable": 73859072,
+          "fraction": 0.04784503959613501,
+          "bytes_fp32": 295436288,
+          "bytes_bf16": 147718144
+        }
+      }
+    }
+  },
+  "hypotheses": {
+    "H1": true,
+    "H2": true,
+    "H3": true
+  },
+  "cross_check": {
+    "predicted_trainable": 4358144,
+    "actual_trainable": 4358144,
+    "agree": true,
+    "all_non_adapter_frozen": true
+  }
+}

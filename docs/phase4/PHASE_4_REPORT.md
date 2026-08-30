@@ -261,12 +261,18 @@ decisive test — a LoRA variant adapting the MLP or an untied head — is one m
 
 | dtype | merged vs unmerged logits, max | mean |
 |---|---:|---:|
-| bf16 | **5.625e-01** | 5.00e-02 |
-| float32 | 6.998e-05 | 4.70e-06 |
+| bf16 | **6.875e-01** | 6.103e-02 |
+| float32 | 6.330e-05 | 4.898e-06 |
 
-~8,000× worse. Cause: `‖ΔW‖/‖W‖ ≈ 0.003` sits at the resolution of bf16's
-~8-bit mantissa, so most of the update rounds away when added to the much
-larger base weight.
+**bf16 is 12,460× less exact than fp32.** Cause: `‖ΔW‖/‖W‖ ≈ 0.003` sits at
+the resolution of bf16's ~8-bit mantissa, so most of the update rounds away
+when added to the much larger base weight.
+
+*(An independent ad-hoc probe on a different prompt gave 5.625e-01 / 5.00e-02
+vs 6.998e-05 / 4.70e-06 — a ratio of 10,638×. Same magnitude, different prompt.
+The table above is E19's committed, reproducible run. An earlier draft of this
+report said "~8,000×", which was a mental estimate rather than either
+measurement; corrected here.)*
 
 E18 verified merge exactness **in float32**, and that result stands. What did
 not transfer is the assumption that it holds in the dtype these models are

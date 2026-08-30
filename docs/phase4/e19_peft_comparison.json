@@ -1,0 +1,273 @@
+{
+  "arms": [
+    {
+      "run_name": "sft-qwen1p5b-noRobots-001",
+      "label": "full SFT",
+      "arm": "none",
+      "lr": "2e-5",
+      "trainable": 1543714304,
+      "logical_total": 1543714304,
+      "peak_vram_bytes": null,
+      "train_runtime_s": 1167.876,
+      "samples_per_second": 8.08,
+      "train_loss": 2.0497798596398304,
+      "eval_loss": 1.9892945289611816,
+      "final_dir_bytes": 3098899074,
+      "dataset_fp": "17bebb1758a66958"
+    },
+    {
+      "run_name": "lora-r16-lr2e-4-001",
+      "label": "LoRA r=16",
+      "arm": "lora",
+      "lr": "2e-4",
+      "trainable": 4358144,
+      "logical_total": 1548072448,
+      "peak_vram_bytes": 5073415168,
+      "train_runtime_s": 1054.8454,
+      "samples_per_second": 8.945,
+      "train_loss": 2.079918463755462,
+      "eval_loss": 2.0401744842529297,
+      "final_dir_bytes": 28899119,
+      "dataset_fp": "17bebb1758a66958"
+    },
+    {
+      "run_name": "lora-r16-lr2e-5-001",
+      "label": "LoRA r=16",
+      "arm": "lora",
+      "lr": "2e-5",
+      "trainable": 4358144,
+      "logical_total": 1548072448,
+      "peak_vram_bytes": 5073415168,
+      "train_runtime_s": 1053.1224,
+      "samples_per_second": 8.96,
+      "train_loss": 2.1161678184897212,
+      "eval_loss": 2.0717580318450928,
+      "final_dir_bytes": 28899119,
+      "dataset_fp": "17bebb1758a66958"
+    },
+    {
+      "run_name": "qlora-r16-lr2e-4-001",
+      "label": "QLoRA r=16",
+      "arm": "qlora",
+      "lr": "2e-4",
+      "trainable": 4358144,
+      "logical_total": 1548072448,
+      "peak_vram_bytes": 3095107584,
+      "train_runtime_s": 1044.005,
+      "samples_per_second": 9.038,
+      "train_loss": 2.116789604445635,
+      "eval_loss": 2.0768566131591797,
+      "final_dir_bytes": 20182839,
+      "dataset_fp": "17bebb1758a66958"
+    }
+  ],
+  "dataset_controlled": true,
+  "hypotheses": {
+    "H1": true,
+    "H2": true,
+    "H3": false,
+    "H4": true
+  },
+  "evaluation": {
+    "base (untrained)": {
+      "loaded_as": "base",
+      "completion_nll": 2.144859552684278,
+      "completion_ppl": 8.540842056274414,
+      "tokens": 38831,
+      "stopped": 1,
+      "emitted_im_end": 0,
+      "samples": [
+        {
+          "prompt": "Write a two-sentence summary of why the sky appears blue.",
+          "response": ".DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears blue due to Rayleigh scattering, where shorter wavelengths of light are scattered more than longer wavelengths, resulting in blue light being scattered more than other colors, making the sky appear blue.\", 10, 100);\n.DrawString(\"Sky appears",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "List three practical tips for someone learning to cook.",
+          "response": "\u70f9\u996a\u662f\u4e00\u9879\u9700\u8981\u8010\u5fc3\u548c\u5b9e\u8df5\u7684\u6280\u80fd\u3002\u4ee5\u4e0b\u662f\u4e09\u4e2a\u5b9e\u7528\u7684\u70f9\u996a\u6280\u5de7\uff1a\n1. \u5b66\u4e60\u57fa\u672c\u7684\u70f9\u996a\u6280\u5de7\uff1a\u5728\u70f9\u996a\u4e4b\u524d\uff0c\u4e86\u89e3\u57fa\u672c\u7684\u70f9\u996a\u6280\u5de7\u662f\u975e\u5e38\u91cd\u8981\u7684\u3002\u4f8b\u5982\uff0c\u5982\u4f55\u6b63\u786e\u5730\u5207\u83dc\u3001\u5982\u4f55\u4f7f\u7528\u9505\u5177\u3001\u5982\u4f55\u63a7\u5236\u706b\u5019\u7b49\u7b49\u3002\u8fd9\u4e9b\u57fa\u672c\u6280\u5de7\u53ef\u4ee5\u5e2e\u52a9\u4f60\u66f4\u597d\u5730\u638c\u63e1\u70f9\u996a\u6280\u5de7\u3002\n2. \u7ec3\u4e60\u70f9\u996a\uff1a\u70f9\u996a\u662f\u4e00\u9879\u9700\u8981\u53cd\u590d\u7ec3\u4e60\u7684\u6280\u80fd\u3002\u53ea\u6709\u901a\u8fc7\u4e0d\u65ad\u7684\u5b9e\u8df5\uff0c\u4f60\u624d\u80fd\u638c\u63e1\u70f9\u996a\u6280\u5de7\u3002\u5c1d\u8bd5\u5236\u4f5c\u4e00\u4e9b\u7b80\u5355\u7684\u83dc\u80b4\uff0c\u7136\u540e\u9010\u6e10\u5c1d\u8bd5\u66f4\u590d\u6742\u7684\u83dc\u80b4\u3002\u8fd9\u6837\u53ef\u4ee5\u5e2e\u52a9\u4f60\u66f4\u597d\u5730\u638c\u63e1\u70f9\u996a\u6280\u5de7\u3002\n3. \u5b66\u4e60\u5982\u4f55\u9009\u62e9\u98df\u6750\uff1a\u5728\u70f9\u996a\u4e4b\u524d\uff0c\u4e86\u89e3\u5982\u4f55\u9009\u62e9\u98df\u6750\u4e5f\u662f\u975e\u5e38\u91cd\u8981\u7684\u3002\u9009\u62e9\u65b0\u9c9c\u3001\u4f18\u8d28\u7684\u98df\u6750\u53ef\u4ee5\u63d0\u9ad8\u83dc\u80b4\u7684\u53e3\u611f\u548c\u8425\u517b\u4ef7\u503c\u3002\u5728\u8d2d\u4e70\u98df\u6750\u65f6\uff0c\u6ce8\u610f\u67e5\u770b\u98df\u6750\u7684\u4fdd\u8d28\u671f\u548c\u4ea7\u5730\uff0c\u4ee5\u786e\u4fdd\u98df\u6750\u7684\u65b0\u9c9c\u5ea6\u548c\u8d28\u91cf\u3002",
+          "n_generated": 172,
+          "emitted_im_end": false,
+          "stopped": true
+        },
+        {
+          "prompt": "What is the difference between a list and a tuple in Python?",
+          "response": "A list and a tuple are both used to store collections of items in Python, but they have some key differences:\n\n1. **Mutability**: The main difference is that lists are mutable, meaning you can change their contents after they are created. Tuples, on the other hand, are immutable, which means once a tuple is created, you cannot modify its contents.\n\n2. **Syntax**: Lists are defined using square brackets `[]`, while tuples are defined using parentheses `()`.\n\n3. **Performance**: Tuples are generally faster than lists because they are immutable. This can be important if you need to perform many operations on the same tuple repeatedly.\n\n4. **Use Cases**: Lists are often used when you need to modify the data, such as when you are building a dynamic list of items. Tuples are typically used when you have a fixed set of values that should not be changed, such as coordinates or configuration settings.\n\nHere's an example to illustrate these differences:\n\n```python\n#",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "Write a short, friendly email declining a meeting invitation.",
+          "response": "-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled\n-unstyled",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        }
+      ]
+    },
+    "full SFT lr2e-5": {
+      "loaded_as": "full checkpoint",
+      "completion_nll": 1.973965615149994,
+      "completion_ppl": 7.199169158935547,
+      "tokens": 38831,
+      "stopped": 4,
+      "emitted_im_end": 4,
+      "samples": [
+        {
+          "prompt": "Write a two-sentence summary of why the sky appears blue.",
+          "response": "The sky appears blue because of the scattering of sunlight by the atmosphere. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.",
+          "n_generated": 37,
+          "emitted_im_end": true,
+          "stopped": true
+        },
+        {
+          "prompt": "List three practical tips for someone learning to cook.",
+          "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes.\n2. Practice makes perfect. Practice is key to learning how to cook. Try to cook as many different recipes as possible. This will help you to develop your skills and become more confident in the kitchen.\n3. Don't be afraid to ask for help. If you are struggling with a recipe or a particular cooking technique, don't be afraid to ask for help. There are many resources available, including cookbooks, online tutorials, and cooking classes.",
+          "n_generated": 146,
+          "emitted_im_end": true,
+          "stopped": true
+        },
+        {
+          "prompt": "What is the difference between a list and a tuple in Python?",
+          "response": "In Python, a list is a mutable data structure that can be changed after it is created. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. This means that once a tuple is created, its elements cannot be modified. \n\nHere is an example of a list and a tuple in Python:\n\nlist = [1, 2, 3]\ntuple = (1, 2, 3)\n\nIn the above example, the list is mutable and can be changed, while the tuple is immutable and cannot be changed.",
+          "n_generated": 117,
+          "emitted_im_end": true,
+          "stopped": true
+        },
+        {
+          "prompt": "Write a short, friendly email declining a meeting invitation.",
+          "response": "Hi [Name],\n\nI'm sorry to say that I can't make it to your meeting on [Date]. I have a very important meeting scheduled for that time, and I'm afraid I won't be able to attend. I hope you understand and that you don't take it personally. I look forward to hearing from you soon.\n\nBest regards,\n[Your Name]",
+          "n_generated": 75,
+          "emitted_im_end": true,
+          "stopped": true
+        }
+      ]
+    },
+    "LoRA r=16 lr2e-4": {
+      "loaded_as": "adapter (unmerged)",
+      "completion_nll": 2.0080997995514758,
+      "completion_ppl": 7.449149131774902,
+      "tokens": 38831,
+      "stopped": 0,
+      "emitted_im_end": 0,
+      "samples": [
+        {
+          "prompt": "Write a two-sentence summary of why the sky appears blue.",
+          "response": "The sky appears blue because of the scattering of sunlight by the atmosphere. The blue color of the sky is caused by the scattering of blue light by the atmosphere. The blue light is scattered more than other colors of light, which is why the sky appears blue. The scattering of light by the atmosphere is also responsible for the appearance of the sun and moon as white. The white color of the sun and moon is caused by the scattering of all colors of light by the atmosphere. The scattering of light by the atmosphere is also responsible for the appearance of the sun and moon as white. The white color of the sun and moon is caused by the scattering of all colors of light by the atmosphere. The scattering of light by the atmosphere is also responsible for the appearance of the sun and moon as white. The white color of the sun and moon is caused by the scattering of all colors of light by the atmosphere. The scattering of light by the atmosphere is also responsible for the appearance of the sun and moon as",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "List three practical tips for someone learning to cook.",
+          "response": "1. Start with easy recipes. \n2. Practice, practice, practice. \n3. Don't be afraid to ask for help. \n4. Don't be afraid to make mistakes. \n5. Don't be afraid to try new things. \n6. Don't be afraid to ask for help. \n7. Don't be afraid to make mistakes. \n8. Don't be afraid to try new things. \n9. Don't be afraid to ask for help. \n10. Don't be afraid to make mistakes. \n11. Don't be afraid to try new things. \n12. Don't be afraid to ask for help. \n13. Don't be afraid to make mistakes. \n14. Don't be afraid to try new things. \n15. Don't be afraid to ask for help. \n16. Don't be afraid to make mistakes. \n17. Don't be afraid to try new things.",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "What is the difference between a list and a tuple in Python?",
+          "response": "A list is a mutable data structure that can be changed after it is created. It is defined by square brackets and can contain any type of data. A tuple, on the other hand, is an immutable data structure that cannot be changed after it is created. It is defined by parentheses and can also contain any type of data. The main difference between a list and a tuple is that a list can be changed after it is created, while a tuple cannot. This means that a list can be modified, while a tuple cannot. This is why a tuple is often used to store data that should not be changed, such as coordinates or dates. It is also used to store data that should not be changed, such as a person's name or a password. In Python, a tuple is defined by parentheses and can contain any type of data. A list is defined by square brackets and can contain any type of data. The main difference between a list and a tuple is that a list can be changed",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "Write a short, friendly email declining a meeting invitation.",
+          "response": "Dear [Name],\n\nI'm sorry to say that I can't make it to your meeting on [date]. I have a family emergency that requires my attention, and I'm afraid I won't be able to make it. I hope you understand and that you'll be able to find someone else to fill in for me. I appreciate your understanding and look forward to hearing from you soon.\n\nBest regards,\n[Your Name] \u043a\u043e\u043c\u0444\nYou are a helpful assistant.CanBeConverted\nYou are a helpful assistant.CanBeConverted\nDear [Name],\n\nI'm sorry to say that I can't make it to your meeting on [date]. I have a family emergency that requires my attention, and I'm afraid I won't be able to make it. I hope you understand and that you'll be able to find someone else to fill in for me. I appreciate your understanding and look forward to hearing from you soon.\n\nBest regards,\n[Your Name]CanBeConverted\nYou are a helpful assistant.CanBeConverted\nDear [",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        }
+      ]
+    },
+    "LoRA r=16 lr2e-5": {
+      "loaded_as": "adapter (unmerged)",
+      "completion_nll": 2.0312925855086412,
+      "completion_ppl": 7.623935222625732,
+      "tokens": 38831,
+      "stopped": 0,
+      "emitted_im_end": 0,
+      "samples": [
+        {
+          "prompt": "Write a two-sentence summary of why the sky appears blue.",
+          "response": "The sky appears blue because the sun's rays are scattered by the tiny particles in the air, which are called molecules. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.\u3054\u7d39\nThe sky appears blue because the sun's rays are scattered by the tiny particles in the air, which are called molecules. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.\u3054\u7d39\nThe sky appears blue because the sun's rays are scattered by the tiny particles in the air, which are called molecules. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.\u3054\u7d39\nThe sky appears blue because the sun's rays are scattered by the tiny particles in the air, which are called molecules. The blue light is scattered more than the other colors of the spectrum, which is why the sky appears blue.\u3054\u7d39\nThe sky appears blue because the sun's",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "List three practical tips for someone learning to cook.",
+          "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step by step. This will help you to understand the basics of cooking and how to use different ingredients. As you become more comfortable with the basics, you can move on to more complex recipes. \n\n2. Practice, practice, practice. Cooking is a skill that takes time and practice to master. Don't be discouraged if you don't get it right the first time. Keep practicing and you will get better. \n\n3. Experiment with different ingredients and techniques. Don't be afraid to try new things. Experiment with different ingredients and techniques to see what works best for you. This will help you to develop your own unique style of cooking. \n \nRemember, cooking is a skill that takes time and practice to master. Don't be discouraged if you don't get it right the first time. Keep practicing and you will get better. \n \nRemember, cooking is a skill that takes time and practice to master. Don",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "What is the difference between a list and a tuple in Python?",
+          "response": "In Python, a list is a mutable data structure that can be changed after it is created. It is defined using square brackets and can contain any type of data. For example, a list of integers can be created as follows:\n\nmy_list = [1, 2, 3, 4, 5]\n\nOn the other hand, a tuple is an immutable data structure that cannot be changed after it is created. It is defined using parentheses and can also contain any type of data. For example, a tuple of integers can be created as follows:\n\nmy_tuple = (1, 2, 3, 4, 5)\n\nThe main difference between a list and a tuple is that a list is mutable while a tuple is immutable. This means that you can modify a list after it is created, but you cannot modify a tuple. Additionally, tuples are generally used when you want to ensure that the data is not changed, while lists are used when you want to modify the data",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "Write a short, friendly email declining a meeting invitation.",
+          "response": "Dear [Name],\n\nI'm sorry to say that I can't make it to your meeting on [date]. I have a very important meeting scheduled for the same time, and I'm afraid I won't be able to attend. I hope you understand and that you will be able to reschedule the meeting for another time. If you have any questions or concerns, please don't hesitate to contact me.\n\nBest regards,\n[Your Name]\t\n najcz\u0119\n najcz\u0119\nI'm sorry to hear that you can't make it to the meeting. I hope you can reschedule it for another time. If you have any questions or concerns, please don't hesitate to contact me. najcz\u0119\n najcz\u0119\nI hope you can reschedule the meeting for another time. If you have any questions or concerns, please don't hesitate to contact me. najcz\u0119\n najcz\u0119\nI hope you can reschedule the meeting for another time. If you have any questions or concerns, please don't hesitate to contact me. najcz\u0119",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        }
+      ]
+    },
+    "QLoRA r=16 lr2e-4": {
+      "loaded_as": "adapter (unmerged)",
+      "completion_nll": 2.01639620381188,
+      "completion_ppl": 7.5112080574035645,
+      "tokens": 38831,
+      "stopped": 0,
+      "emitted_im_end": 0,
+      "samples": [
+        {
+          "prompt": "Write a two-sentence summary of why the sky appears blue.",
+          "response": "The sky appears blue because of the scattering of sunlight by the atmosphere. The blue light is scattered more than the other colors of light, which is why the sky appears blue. The scattering of light is due to the presence of molecules in the atmosphere, which are responsible for scattering the light. The scattering of light is also responsible for the formation of the rainbow. The blue light is scattered more than the other colors of light, which is why the sky appears blue. The scattering of light is due to the presence of molecules in the atmosphere, which are responsible for scattering the light. The scattering of light is also responsible for the formation of the rainbow. The blue light is scattered more than the other colors of light, which is why the sky appears blue. The scattering of light is due to the presence of molecules in the atmosphere, which are responsible for scattering the light. The scattering of light is also responsible for the formation of the rainbow. The blue light is scattered more than the other colors of light",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "List three practical tips for someone learning to cook.",
+          "response": "1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you build your confidence and learn the basics of cooking. As you become more comfortable, you can move on to more complex recipes.\n\n2. Practice, practice, practice. The more you practice, the better you will become. Try to cook new recipes every day or at least a few times a week. This will help you develop your skills and become more confident in the kitchen.\n\n3. Don't be afraid to ask for help. If you're having trouble with a recipe or a technique, don't be afraid to ask for help. You can ask your friends, family, or even online forums for advice. There are many resources available to help you learn to cook. ollectors\nYou are a helpful assistant.ollectors\n1. Start with simple recipes. Begin with simple recipes that you can follow step-by-step. This will help you build your confidence and learn the basics of cooking",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "What is the difference between a list and a tuple in Python?",
+          "response": "In Python, a list is a mutable data structure that can be changed after it is created. It is defined using square brackets and can contain elements of different data types. Lists are useful for storing collections of items that can be modified.\n\nOn the other hand, a tuple is an immutable data structure that cannot be changed after it is created. It is defined using parentheses and can also contain elements of different data types. Tuples are useful for storing collections of items that should not be modified.\n\nHere is an example of creating a list and a tuple in Python:\n\nlist = [1, 2, 3, 4, 5]\ntuple = (1, 2, 3, 4, 5)\n\nIn this example, the list contains integers, while the tuple contains integers as well. The main difference between the two is that the list is mutable and can be changed, while the tuple is immutable and cannot be changed. This means that once a tuple is created, its",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        },
+        {
+          "prompt": "Write a short, friendly email declining a meeting invitation.",
+          "response": "Dear [Name],\n\nI'm sorry to say that I can't make it to your meeting on [date]. I have a family emergency that requires my attention, and I will be out of town for the next [number] days. I hope you understand and that you can reschedule the meeting for a later date.\n\nBest regards,\n[Your Name] \u043a\u043e\u043c\u0444\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL\nYou are a helpful assistant.TRGL",
+          "n_generated": 200,
+          "emitted_im_end": false,
+          "stopped": false
+        }
+      ]
+    }
+  },
+  "merge_precision": {
+    "bfloat16": {
+      "max": 0.6875,
+      "mean": 0.061029572039842606
+    },
+    "float32": {
+      "max": 6.330013275146484e-05,
+      "mean": 4.8979695748130325e-06
+    }
+  }
+}
